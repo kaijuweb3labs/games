@@ -1,0 +1,22 @@
+{
+  "enablePasswordEncryption": false,
+  "showTransactionConfirmationScreen": true,
+  "factory_address": "0x05fcCb0CDb700CCBd5F2e7C1b47A8E7C53477E34",
+  "token_paymaster": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+  "nft_paymaster": "0xE64061Ea8358eC37b0808f25d5627281a90F67Be",
+  "network": {
+    "chainID": 80001,
+    "family": "EVM",
+    "name": "Mumbai Testnet",
+    "provider": "https://wider-virulent-water.matic-testnet.discover.quiknode.pro/f9d25fedbd25e168ce775b16a328b3b0cb371543/",
+    "entryPointAddress": "0x0576a174D229E3cFA37253523E645A78A0C91B57",
+    "bundler": "https://node.stackup.sh/v1/rpc/b846f697771310c835b00acef26c8f43b5f67a04f00dae1517bec324d87f21f0",
+    "baseAsset": {
+      "symbol": "MATIC",
+      "name": "MATIC",
+      "decimals": 18,
+      "image": "https://polygonscan.com/images/svg/brands/polygon.svg"
+    },
+    "blockExplorerUrl": "https://api-testnet.polygonscan.com/api"
+  }
+}

@@ -1,0 +1,110 @@
+[
+    {
+        "inputs": [
+            {
+                "internalType": "contract SafeProxyFactory",
+                "name": "_proxyFactory",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "_safeSingleton",
+                "type": "address"
+            },
+            {
+                "internalType": "contract EIP4337Manager",
+                "name": "_eip4337Manager",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "constructor"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "owner",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "salt",
+                "type": "uint256"
+            }
+        ],
+        "name": "createAccount",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "eip4337Manager",
+        "outputs": [
+            {
+                "internalType": "contract EIP4337Manager",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "owner",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "salt",
+                "type": "uint256"
+            }
+        ],
+        "name": "getAddress",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "proxyFactory",
+        "outputs": [
+            {
+                "internalType": "contract SafeProxyFactory",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "safeSingleton",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    }
+]

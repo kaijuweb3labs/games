@@ -1,0 +1,9 @@
+{
+    "clientId": "BOIdPj5PdiXH5F13C3q9FA3gW3W5wwiyCZDvN2qImtQJum_DwJvJF33KOmuxiH5NNEjXZZYb3IES4aH4n2aqpjI",
+    "chainConfig": {
+        "chainNamespace": "eip155",
+        "chainId": "0x5 ",
+        "rpcTarget": "https://goerli.blockpi.network/v1/rpc/public"
+    },
+    "web3AuthNetwork": "testnet"
+}

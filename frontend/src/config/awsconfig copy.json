@@ -1,0 +1,19 @@
+{
+    "identityPoolId": "us-east-1:90fe8fa2-e3e0-45c4-84ea-61a2cc532547",
+    "region": "us-east-1",
+    "identityPoolRegion": "us-east-1",
+    "userPoolId": "us-east-1_P0nAPJLJh",
+    "userPoolWebClientId": "5frqrnabs7an6pni036solnq1j",
+    "oauth": {
+        "scope": [
+            "email",
+            "profile",
+            "openid"
+        ],
+        "domain": "kaiju-web-demo-dev.auth.us-east-1.amazoncognito.com",
+        "redirectSignIn": "http://localhost:3000/",
+        "redirectSignOut": "http://localhost:3000/",
+        "clientId": "5frqrnabs7an6pni036solnq1j",
+        "responseType": "token"
+    }
+}

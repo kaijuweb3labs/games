@@ -1,0 +1,18 @@
+{
+  "projects": {
+    "default": "solar-program-371510"
+  },
+  "targets": {
+    "solar-program-371510": {
+      "hosting": {
+        "kaijudev": [
+          "kaijudev"
+        ],
+        "kaijuprod": [
+          "kaijuprod"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

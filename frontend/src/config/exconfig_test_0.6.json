@@ -1,0 +1,23 @@
+{
+  "enablePasswordEncryption": false,
+  "showTransactionConfirmationScreen": true,
+  "factory_address": "0x7362028Bb53a78e84622446ebF5B2346Bd0F64bd",
+  "token_paymaster": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+  "nft_paymaster": "0x2E983A1Ba5e8b38AAAeC4B440B9dDcFBf72E15d1",
+  "network": {
+    "chainID": 31337,
+    "family": "EVM",
+    "name": "Hardhat Dev",
+    "provider": "http://localhost:8545/",
+    "entryPointAddress": "0x48e60BBb664aEfAc9f14aDB42e5FB5b4a119EB66",
+    "bundler": "http://localhost:9000/rpc",
+    "baseAsset": {
+      "symbol": "ETH",
+      "name": "ETH",
+      "decimals": 18,
+      "image": "https://etherscan.io/images/svg/brands/ethereum-original.svg"
+    },
+    "blockExplorerAPIUrl": "https://api-testnet.polygonscan.com/api",
+    "blockExplorerUrl": "https://mumbai.polygonscan.com"
+  }
+}

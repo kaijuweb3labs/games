@@ -1,0 +1,30 @@
+.scoresContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+}
+
+.addScore {
+  position: absolute;
+  right: 10px;
+  font-size: 14px;
+  line-height: 14px;
+  font-weight: bold;
+  color: white;
+  z-index: 100;
+  animation: move-up 600ms ease-in;
+  animation-fill-mode: both;
+}
+
+@keyframes move-up {
+  0% {
+    top: 0px;
+    opacity: 1;
+  }
+  100% {
+    top: -75px;
+    opacity: 0;
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "@ethersproject/contracts": "^5.7.0",
+    "@ethersproject/providers": "^5.7.2",
+    "@ethersproject/units": "^5.7.0",
+    "@ethersproject/wallet": "^5.7.0",
+    "aws-sdk": "^2.1395.0"
+  }
+}

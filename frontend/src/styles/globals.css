@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+html {
+  font-family: "Poppins", "Exo 2", sans-serif;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: #13141c;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+@layer components {
+  .sidebar-item {
+    @apply p-2 md:mr-[16px]
+    rounded-[12px] hover:bg-[#2F3146] transition duration-300;
+  }
+
+  .app-button {
+    @apply h-full w-full bg-[#1C1D29] rounded-[16px] p-[20px] md:p-[30px] lg:p-[10px]
+    lg:hover:scale-110 transition duration-300 flex flex-col justify-center items-center;
+  }
+
+  .app-image {
+    @apply w-[150px] md:w-[200px];
+  }
+}

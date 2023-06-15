@@ -1,0 +1,47 @@
+service: kaijuWebGame
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: dev
+  iam:
+    role:
+      statements:
+        - Effect: "Allow"
+          Action:
+            - "s3:*"
+          Resource: "*"
+        - Effect: "Allow"
+          Action: [ "ses:SendEmail",
+                    "ses:SendRawEmail"]
+          Resource: "*"
+  environment:
+    REGION: ${file(./env.yml):${self:provider.stage}.REGION}
+    STAGE: ${self:provider.stage}
+
+functions:
+  PaymasterSign:
+    handler: functions/paymasterSign/paymasterSign.handler
+    events:
+      - http:
+          path: /paymasterSignjs
+          method: post
+
+  gameRewards:
+    handler: functions/gameRewards.gameRewards
+    environment:
+      RPC_URL: ${file(./env.yml):${self:provider.stage}.RPC_URL}
+      PRIVATE_KEY: ${file(./env.yml):${self:provider.stage}.PRIVATE_KEY}
+      GAME_FACTORY_CONTRACT: ${file(./env.yml):${self:provider.stage}.GAME_FACTORY_CONTRACT}
+      KAIJU_TOKEN_CONTRACT: ${file(./env.yml):${self:provider.stage}.KAIJU_TOKEN_CONTRACT}
+      USDT_CONTRACT: ${file(./env.yml):${self:provider.stage}.USDT_CONTRACT}
+  
+  paymasterBalanceCheck:
+    handler: functions/paymasterBalanceCheck.paymasterBalanceCheck
+    environment:
+      PAYMASTER_CONTRACT: ${file(./env.yml):${self:provider.stage}.PAYMASTER_CONTRACT}
+      PAYMASTER_THRESHOLD_VALUE: ${file(./env.yml):${self:provider.stage}.PAYMASTER_THRESHOLD_VALUE}
+      FROM_ADDRESS: ${file(./env.yml):${self:provider.stage}.FROM_ADDRESS}
+      TO_ADDRESS: ${file(./env.yml):${self:provider.stage}.TO_ADDRESS}
+      RPC_URL: ${file(./env.yml):${self:provider.stage}.RPC_URL}
