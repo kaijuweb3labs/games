@@ -39,7 +39,7 @@ const Medalist: React.FC<MedalistProps> = ({
         }
       >
         <img
-          src={image}
+          src={image !== '' && image !== undefined ? image : '/profilePlaceholder.svg'} 
           alt="Profile"
           className="h-[48px] w-[48px] rounded-full"
         />
@@ -48,7 +48,7 @@ const Medalist: React.FC<MedalistProps> = ({
           {convertToScoreFormat(score)} Points
         </h4>
       </div>
-      <Link href={`${TX_SCAN_URL}${txHash}`}  rel="noopener noreferrer" target="_blank"
+      <Link href={`${TX_SCAN_URL}/tx/${txHash}`}  rel="noopener noreferrer" target="_blank"
         className={
           `flex flex-col items-center justify-between bg-gradient-to-b p-[16px] pb-[20px] rounded-t-[30px] space-y-[10px]` +
           footerFlex +

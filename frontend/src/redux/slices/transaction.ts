@@ -4,24 +4,33 @@ import { UserOperationStruct } from "@account-abstraction/contracts";
 import {
   IAction,
   changeNewGamePressed,
-  changeSessionNFTMinted,
-  changeUserPLayGame,
   selectAuthHeaders,
   setRandomSeed,
   setScoreValiedState,
 } from "./user";
 
-import { getGasFee } from "../../utils/user-op";
 import GAccountAPI from "@/services/packages/account-api";
 import Config from "../../config/exconfig";
 import { TransactionReceipt } from "@ethersproject/providers";
 import { selectAPIParams, selectAccountAddress } from "./wallet";
 import { BASE_API_URL } from "@/config";
-import { fetchLeaderBoard } from "./game";
-import { getNftMetadataUrl, updateGame } from "@/services/game-api/game-api";
+import { GameStageEnum, fetchLeaderBoard, selectGameSessionData, updateGameStage } from "./game";
+import {
+  getByteCode,
+  getNftMetadataUrl,
+  updateGame,
+} from "@/services/game-api/game-api";
 import { KaijuGameFactory__factory } from "@/contracts/factories/game-2048";
 import { AddressZero } from "@ethersproject/constants";
 import { BigNumber } from "@ethersproject/bignumber";
+import { encodeGameMoves } from "@/utils/helpers/encode";
+import { useReduxSelector } from "../hooks";
+
+const gasEstimations = {
+  mintNft: {
+    verificationGasLimit: 255000,
+  },
+};
 
 export type TransactionState = {
   openTransactionModal: boolean;
@@ -47,11 +56,11 @@ const transactionSlice = createSlice({
   initialState,
   reducers: {
     setTransactionModal: (state, action: IAction<boolean>) => {
-      console.log("Dispatch openTransaction Modal");
+      // console.log("Dispatch openTransaction Modal");
       state.openTransactionModal = action.payload;
     },
     setTransactionStage: (state, action: IAction<string>) => {
-      console.log("Dispatch openTransaction Modal");
+      // console.log("Dispatch openTransaction Modal");
       state.transactionStage = action.payload;
     },
     setUnsignedUserOperation: (
@@ -93,7 +102,6 @@ const transactionSlice = createSlice({
         };
       }
     ) => {
-      console.log("Set Receipt............");
       return {
         ...state,
         transactionReceipt: transactionReceipt,
@@ -115,7 +123,6 @@ const transactionSlice = createSlice({
 export const createGameRandom = createAsyncThunk(
   "transactions/setRandomSeed",
   async ({ gameId }: { gameId: string }, { dispatch, getState }) => {
-    console.log("Creating User Op for New Game...");
     const state = getState() as any;
     const accountApiParams = selectAPIParams(state);
     const providerUrl = accountApiParams.providerUrl;
@@ -128,15 +135,10 @@ export const createGameRandom = createAsyncThunk(
     const accountAddress = selectAccountAddress(state);
 
     if (!privateKey) {
-      console.log("No private Key Config");
-      return;
-    } else {
-      console.log("Private Key:", privateKey);
+      console.error("No private Key Config");
     }
-    if (gameId) {
-      console.log("Game ID Set:::", gameId);
-    } else {
-      console.log("Game ID Failed...", gameId);
+    if (!gameId) {
+      console.error("Game ID Not found", gameId);
     }
     const accountAPI = new GAccountAPI({
       providerUrl,
@@ -147,7 +149,8 @@ export const createGameRandom = createAsyncThunk(
       bundler,
     });
     accountAPI.paymasterAPI.setPaymaster(
-      `${BASE_API_URL}common/verifyPaymasterData`
+      `${BASE_API_URL}common/verifyPaymasterData`,
+      () => selectAuthHeaders()
     );
     const gameFactory = KaijuGameFactory__factory.connect(
       gameFactoryAddress,
@@ -163,27 +166,16 @@ export const createGameRandom = createAsyncThunk(
       const userOp = await accountAPI.createUnsignedUserOp({
         target: target,
         data: data,
-        ...(await getGasFee(provider)),
       });
 
       const signedUserOp = await accountAPI.signUserOp(userOp);
-
-      const client = bundler;
-      const uoHash = await client.sendUserOpToBundler(signedUserOp);
-      console.log(`UserOpHash: ${uoHash}`);
-      const txEvent = await accountAPI.getUserOpEventRPC(
-        accountAddress,
-        uoHash
-      );
-
-      const receipt = await accountAPI.getTxn(txEvent.transactionHash);
+      const receipt = await accountAPI.sendUserOp(signedUserOp);
       console.log("Trasaction Resipt:", receipt);
 
       let randomNumber: number;
 
       try {
         if (receipt.status == 1) {
-          console.log("Transaction Successful.");
           for (let i = 0; i < receipt.logs.length; i++) {
             if (receipt.logs[i].address == gameFactoryAddress) {
               const eventData = gameFactory.interface.decodeEventLog(
@@ -195,19 +187,18 @@ export const createGameRandom = createAsyncThunk(
               break;
             }
           }
-          console.log("Random Seed of", gameId, ":", randomNumber);
+          // console.log("Random Seed of", gameId, ":", randomNumber);
           dispatch(setRandomSeed({ randomSeed: randomNumber }));
+          dispatch(updateGameStage(GameStageEnum.INITIALIZED));
         } else {
           console.error("Transaction failed on executing");
           dispatch(changeNewGamePressed(false));
-          dispatch(changeUserPLayGame(true));
-          dispatch(changeSessionNFTMinted(false));
         }
       } catch (e) {
         console.error(e);
       }
     } catch (e) {
-      console.log(e);
+      console.error(e);
     }
   }
 );
@@ -215,12 +206,11 @@ export const createGameRandom = createAsyncThunk(
 export const checkScoreValidation = createAsyncThunk(
   "transactions/checkScoreValidation",
   async (
-    { gameMoves, score }: { gameMoves?: string; score?: number },
+    { gameMoves, score }: { gameMoves?: number[]; score?: number },
     { dispatch, getState }
   ) => {
-    console.log("Creating User Op for Validation..");
     const state = getState() as any;
-    const headers = selectAuthHeaders(state);
+    const headers = await selectAuthHeaders(state);
     const accountApiParams = selectAPIParams(state);
     const providerUrl = accountApiParams.providerUrl;
     const provider = accountApiParams.provider;
@@ -231,15 +221,14 @@ export const checkScoreValidation = createAsyncThunk(
     const gameFactoryAddress = Config.game_factory_address;
     const accountAddress = selectAccountAddress(state);
 
-    console.log("Game Moves ::::", gameMoves);
-
     const gameID: string = state.user.gameId;
+
     if (!gameID) {
-      console.log("Game ID Failed.....", gameID);
+      console.error("Game ID Failed.....", gameID);
     }
 
     if (!score) {
-      console.log("Score is Not Awailable...", score);
+      console.error("Score is Not Awailable...", score);
     }
     const accountAPI = new GAccountAPI({
       providerUrl,
@@ -251,7 +240,8 @@ export const checkScoreValidation = createAsyncThunk(
     });
 
     accountAPI.paymasterAPI.setPaymaster(
-      `${BASE_API_URL}common/verifyPaymasterData`
+      `${BASE_API_URL}common/verifyPaymasterData`,
+      () => selectAuthHeaders()
     );
 
     const gameFactory = KaijuGameFactory__factory.connect(
@@ -265,108 +255,117 @@ export const checkScoreValidation = createAsyncThunk(
         {
           score: score,
           gameId: gameID,
+          playerName: state.user.displayName,
+          date: state.gameData.singaporeDate,
         },
         headers
       );
 
       if (!fetchedUid) {
-        console.log("Metadata Fetch Failed......", fetchedUid);
+        console.error("Metadata Fetch Failed......", fetchedUid);
+      }
+      const encodedData = encodeGameMoves(gameMoves);
+      let byteCode = await getByteCode(
+        {
+          gameId: gameID,
+          FEScore: score,
+          origMovesLength: gameMoves.length,
+          movesPerVar: encodedData.movesPerVar,
+          movesEncodedLength: encodedData.encodedMoves.length,
+          movesEncoded: encodedData.encodedMoves,
+        },
+        headers
+      );
+
+      if (byteCode) {
+        // console.log("ByteCode:::::", byteCode, byteCode.length);
+        if (byteCode.length % 2 !== 0) {
+          console.log("Refactoring ByteCode Length to even... [Add 0 to tail]")
+          byteCode += "0";
+        }
+      } else {
+        console.error("getByteCode Fetching Failed.");
       }
 
-      console.log("meta Data Url:", fetchedUid);
+      // console.log("meta Data Url:", fetchedUid);
       const data = gameFactory.interface.encodeFunctionData("verify2048game", [
         gameID,
-        gameMoves,
         score,
+        byteCode,
         fetchedUid,
       ]);
 
       const userOp = await accountAPI.createUnsignedUserOp({
         target: target,
         data: data,
-        ...(await getGasFee(provider)),
+        verificationGasLimit: gasEstimations.mintNft.verificationGasLimit,
       });
-
-      console.log("User Operation: ==================== ", userOp);
 
       const signedUserOp = await accountAPI.signUserOp(userOp);
 
-      const client = bundler;
+      const receipt = await accountAPI.sendUserOp(signedUserOp);
 
-      const uoHash = await client.sendUserOpToBundler(signedUserOp);
-      console.log(`UserOpHash: ${uoHash}`);
-      console.log("Waiting for transaction...");
-      const txEvent = await accountAPI.getUserOpEventRPC(
-        accountAddress,
-        uoHash
-      );
-
-      const receipt = await accountAPI.getTxn(txEvent.transactionHash);
-
-      console.log(`Transaction hash: ${txEvent.transactionHash}`);
-      console.log("Contract Call is Done....");
+      //console.log(`Transaction hash: ${receipt.transactionHash}`);
       console.log("Transaction Recipt:", receipt);
 
       let isValied: boolean;
       let contractScore: number;
       try {
         if (receipt.status == 1) {
-          console.log("Transaction Successful.");
           for (let i = 0; i < receipt.logs.length; i++) {
             if (receipt.logs[i].address == gameFactoryAddress) {
               const eventData = gameFactory.interface.decodeEventLog(
-                "Verify2048Game(string indexed _gameID, bool _isValid, uint256 _contractScore)",
+                "Verify2048Game(string indexed _gameId, bool _isValid, uint256 _FEScore, uint256 _contractScore)",
                 receipt.logs[i].data,
                 receipt.logs[i].topics
               );
               isValied = eventData._isValid;
-              contractScore = BigNumber.from(
-                eventData._contractScore
-              ).toNumber();
+              contractScore = 0;
               break;
             }
           }
 
-          console.log(
-            "Game Score Validate (from Contract):",
-            isValied,
-            contractScore
-          );
+          console.log("Game Data of the Session:", {
+            gameID: gameID,
+            randomNumber: state.user.randomSeed,
+            FEScore: score,
+            contractScore: contractScore,
+            moves: gameMoves,
+            movesPerVar: encodedData.movesPerVar,
+          });
 
-          if (isValied && !(contractScore == score)) {
-            isValied = false;
-          }
-
-          console.log("Game Validation:", isValied);
           dispatch(setScoreValiedState({ isScoreValied: isValied }));
-          dispatch(fetchLeaderBoard());
-          dispatch(changeSessionNFTMinted(true));
+
+          dispatch(updateGameStage(GameStageEnum.MINTED));
 
           try {
+            let gameSession = state.gameData.gameSessionData
             let gameValidateUpdate: any = await updateGame(
               {
                 gameID: gameID,
-                transactionHash: txEvent.transactionHash,
+                gameSession: gameSession,
+                transactionHash: receipt.transactionHash,
                 FEScore: score,
                 contractScore: contractScore,
                 isValid: isValied,
               },
               headers
             );
-            console.log("Game Updated |||", gameValidateUpdate);
           } catch (e) {
-            console.log("Failed to Update Backend ## ", e);
+            console.error("Failed to Update Backend", e);
           }
+          dispatch(fetchLeaderBoard());
         } else {
           console.error("Transaction failed on executing");
-          dispatch(changeSessionNFTMinted(false));
+          dispatch(updateGameStage(GameStageEnum.PENDING));
         }
       } catch (e) {
         console.error(e);
-        return null;
+        dispatch(updateGameStage(GameStageEnum.PENDING));
       }
     } catch (e) {
-      console.log(e);
+      console.error(e);
+      dispatch(updateGameStage(GameStageEnum.PENDING));
     }
   }
 );

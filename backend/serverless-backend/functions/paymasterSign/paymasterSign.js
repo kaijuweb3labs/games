@@ -10,7 +10,7 @@ const {getVerificationGasLimit, getPreVerificationGas} = require("./utils/Simple
 module.exports.handler = async (event) => {
 
   const eventBody =  JSON.parse(event.body)
-  const metaDataURL = "ipfs://QmXzcqXnoGf8z3Hd73ZaRdVSahwgq9hs4LGk4zu3NM3JaX"
+  const metaDataURL = "ipfs://YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY"
 
   if (eventBody.sender.length < 2 || eventBody.sender.length > 42) {
     return {
@@ -67,7 +67,7 @@ module.exports.handler = async (event) => {
     console.log(userOp.preVerificationGas)
     const paymasterAddress = Config.nft_paymaster;
     const signer = new Wallet(
-      "0x1a0ff12e07e13b32e8e6ef3965e3af9140a39180523f37a262ca2473e681d13b",
+      "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
       provider
     );
 

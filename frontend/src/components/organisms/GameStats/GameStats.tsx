@@ -1,29 +1,22 @@
 import { useGameContext } from "@/hooks/useGameContext";
 import { useSelector } from "react-redux";
-
 import { Tile } from "../../interfaces";
-import {
-  changeNFTMinting,
-  changeSessionNFTMinted,
-  selectUser,
-  selectsessionNFTMinted,
-} from "@/redux/slices/user";
 import useGameLocalStorage from "@/hooks/useLocalStorage";
 import { getMaxId } from "@/utils/boardUtils";
-import { TEST } from "@/config";
 import { useCallback, useEffect, useState } from "react";
 import styles from "./GameStats.module.scss";
 import { useReduxDispatch, useReduxSelector } from "@/redux/hooks";
-import { checkScoreValidation } from "@/redux/slices/transaction";
 import { selectAccountAddress } from "@/redux/slices/wallet";
 import {
   GameStageEnum,
   getPersonalBest,
+  selectGameStage,
   updateGameStage,
 } from "@/redux/slices/game";
 import MintNftModal from "../Modals/MintNftModal";
+import React from "react";
 export type ACTIONTYPE = {
-  type: "change" | "personalBest";
+  type: "change" | "personalBest" | "REPLACE_STATE";
   payload: any;
 };
 
@@ -36,7 +29,7 @@ export interface ScoresState {
 }
 
 const initState = (tiles: Tile[] = []): ScoresState => {
-  //console.log('ScoresContainer initState.......')
+  // console.log("ScoresContainer initState.......");
   return {
     score: 0,
     newPoints: 0,
@@ -54,6 +47,7 @@ const stateReducer = (state: ScoresState, action: ACTIONTYPE) => {
   switch (action.type) {
     case "change": {
       const tiles = action.payload.tiles;
+      //console.log(tiles);
       // handles page refresh
       if (
         state.tiles.length === tiles.length &&
@@ -66,7 +60,8 @@ const stateReducer = (state: ScoresState, action: ACTIONTYPE) => {
       if (
         tiles.length === 2 &&
         [1, 2].every((id) => tiles.find((tile) => tile.id === id)) &&
-        !state.tiles.every((t) => containsTile(tiles, t))
+        (!state.tiles.every((t) => containsTile(tiles, t)) ||
+          state.tiles.length === 0)
       ) {
         return {
           ...initState(tiles),
@@ -80,17 +75,6 @@ const stateReducer = (state: ScoresState, action: ACTIONTYPE) => {
         state.tiles.every((t) => containsTile(tiles, t)) &&
         tiles.length === state.tiles.length + 1
       ) {
-        if (
-          action.payload.status == "GAME_OVER" ||
-          action.payload.status == "WIN"
-        ) {
-          if (state.score >= state.bestScore || TEST) {
-            let ev2 = new CustomEvent(action.payload.status, {
-              detail: { score: state.score },
-            });
-            window.dispatchEvent(ev2);
-          }
-        }
         return {
           ...state,
           tiles: tiles,
@@ -111,17 +95,7 @@ const stateReducer = (state: ScoresState, action: ACTIONTYPE) => {
 
       const score = state.score + newPoints;
       const bestScore = Math.max(score, state.bestScore);
-      if (
-        action.payload.status == "GAME_OVER" ||
-        action.payload.status == "WIN"
-      ) {
-        if (score >= bestScore || TEST) {
-          let ev2 = new CustomEvent(action.payload.status, {
-            detail: { score: score },
-          });
-          window.dispatchEvent(ev2);
-        }
-      }
+
       return {
         tiles,
         newPoints,
@@ -133,24 +107,30 @@ const stateReducer = (state: ScoresState, action: ACTIONTYPE) => {
     case "personalBest": {
       return { ...state, bestScore: action.payload.bestScore };
     }
+    case "REPLACE_STATE": {
+      return action.payload;
+    }
     default: {
       throw new Error(`Unhandled action type: ${action.type}`);
     }
   }
 };
+export const GameStatsContext = React.createContext<any>(null);
 
 const GameStats: React.FC = () => {
-  const { gameState } = useGameContext();
+  const { gameState, dispatch: gameDispatch } = useGameContext();
   const address = useSelector(selectAccountAddress);
-  const isSwssionNFTMInted = useReduxSelector(selectsessionNFTMinted);
-  const [gameLoading, setGameLoading] = useState(Boolean);
-  const [loadNewGameWindow, setNewGameWindow] = useState(true);
-  const user = useReduxSelector(selectUser);
-  const [nftMint, setNftMint] = useState(false);
+  const gameStage = useReduxSelector(selectGameStage);
   const reduxDispatch = useReduxDispatch();
   const [state, dispatch] = useGameLocalStorage(
     "scores",
-    initState(),
+    {
+      score: 0,
+      newPoints: 0,
+      bestScore: 0,
+      tiles: [],
+      status: "IN_PROGRESS",
+    },
     stateReducer
   );
 
@@ -163,7 +143,7 @@ const GameStats: React.FC = () => {
         });
       }
     });
-  }, [address]);
+  }, [address, dispatch, reduxDispatch]);
 
   useEffect(() => {
     dispatch({
@@ -171,6 +151,7 @@ const GameStats: React.FC = () => {
       payload: { tiles: gameState.tiles, status: gameState.status },
     });
   }, [gameState.tiles, dispatch, gameState.status]);
+
   useEffect(() => {
     if (state.newPoints > 0) {
       const oldAddScore = document.getElementById("additionScore");
@@ -180,77 +161,79 @@ const GameStats: React.FC = () => {
     }
   }, [state]);
 
-  const mintNftAccept = useCallback(() => {
-    console.log("Minting the NFT..............");
-    reduxDispatch(
-      checkScoreValidation({ gameMoves: gameState.moves, score: state.score })
-    );
-    reduxDispatch(changeNFTMinting(true));
-    reduxDispatch(updateGameStage(GameStageEnum.PENDING));
-    setNftMint(false);
-  }, [state.score, gameState.moves]);
+  useEffect(() => {
+    if (state.status === "GAME_OVER" && gameStage === GameStageEnum.PLAYING) {
+      // console.log("Mint modal open");
 
-  const mintNftClose = useCallback(() => {
-    console.log("Dont mint and Return to New Game.");
-    setNftMint(false);
-    reduxDispatch(updateGameStage(GameStageEnum.PENDING));
-    reduxDispatch(changeSessionNFTMinted(true));
+      reduxDispatch(updateGameStage(GameStageEnum.MINT));
+      gameDispatch({ type: "continue" });
+    }
+  }, [state.status, gameStage, reduxDispatch, gameDispatch]);
+
+  const mintNftAccept = useCallback(() => {
+    // console.log("Minting the NFT..............");
   }, []);
 
-  useEffect(() => {
-    console.log("Game Status In UseEffect::::::::::::::", state.status);
-    if (state.status === "GAME_OVER" && !isSwssionNFTMInted) {
-      setNewGameWindow(true);
-      reduxDispatch(updateGameStage(GameStageEnum.MINTING));
-      setNftMint(true);
-    }
-  }, [state.status]);
+  const mintNftClose = useCallback(() => {
+    reduxDispatch(updateGameStage(GameStageEnum.PENDING));
+  }, [reduxDispatch]);
+
   return (
-    <div className="flex flex-col md:flex-row md:items-center bg-[#1C1D29] rounded-[30px] py-[13px] px-[28px]">
-      <div className="flex flex-col">
-        <h1 className="text-[18px] font-bold text-white">2048</h1>
-        <h1 className="text-[10px] font-medium text-[#8C8EA6]"></h1>
-      </div>
-      <div className="flex flex-row md:ml-auto">
-        <div className="flex flex-row items-center space-x-[8px]">
-          <div className="p-[6px] bg-[#C64CB8] shadow-sm rounded-[10px]">
-            <img
-              src="/lightening.svg"
-              alt="Lightening"
-              className="h-[16px] w-[16px]"
-            />
+    <GameStatsContext.Provider value={{ scoreState: state, dispatch }}>
+      <div className="flex flex-col md:flex-row md:items-center bg-[#1C1D29] rounded-[30px] py-[13px] px-[28px]">
+        <div className="flex flex-col">
+          <h1 className="text-[18px] font-bold text-white">2048</h1>
+          <h1 className="text-[10px] font-medium text-[#8C8EA6]"></h1>
+        </div>
+        <div className="flex flex-row md:ml-auto">
+          <div className="flex flex-row items-center space-x-[8px]">
+            <div className="p-[6px] bg-[#C64CB8] shadow-sm rounded-[10px]">
+              <img
+                src="/lightening.svg"
+                alt="Lightening"
+                className="h-[16px] w-[16px]"
+              />
+            </div>
+            <div className="flex flex-col relative">
+              <div className={styles.addScore} id="additionScore"></div>
+              <h1 className="text-[14px] font-bold text-white">
+                {state.score}
+              </h1>
+              <h1 className="text-[10px] font-medium text-[#8C8EA6]">
+                Current Score
+              </h1>
+            </div>
           </div>
-          <div className="flex flex-col relative">
-            <div className={styles.addScore} id="additionScore"></div>
-            <h1 className="text-[14px] font-bold text-white">{state.score}</h1>
-            <h1 className="text-[10px] font-medium text-[#8C8EA6]">
-              Current Score
-            </h1>
+          <div className="flex flex-row items-center space-x-[8px] ml-[16px]">
+            <div className="p-[6px] bg-[#F4BB76] shadow-sm rounded-[10px]">
+              <img
+                src="/trophy.svg"
+                alt="Trophy"
+                className="h-[16px] w-[16px]"
+              />
+            </div>
+            <div className="flex flex-col">
+              <h1 className="text-[14px] font-bold text-white">
+                {state.bestScore}
+              </h1>
+              <h1 className="text-[10px] font-medium text-[#8C8EA6]">
+                Personal Best
+              </h1>
+            </div>
           </div>
         </div>
-        <div className="flex flex-row items-center space-x-[8px] ml-[16px]">
-          <div className="p-[6px] bg-[#F4BB76] shadow-sm rounded-[10px]">
-            <img src="/trophy.svg" alt="Trophy" className="h-[16px] w-[16px]" />
-          </div>
-          <div className="flex flex-col">
-            <h1 className="text-[14px] font-bold text-white">
-              {state.bestScore}
-            </h1>
-            <h1 className="text-[10px] font-medium text-[#8C8EA6]">
-              Personal Best
-            </h1>
-          </div>
-        </div>
+        <>
+          {gameStage === GameStageEnum.MINT &&
+            state.status === "MINT_AFTER_PLAY" && (
+              <MintNftModal
+                show={gameStage === GameStageEnum.MINT}
+                mintNft={mintNftAccept}
+                closeMint={mintNftClose}
+              />
+            )}
+        </>
       </div>
-      <>
-        {nftMint && (
-          <MintNftModal
-            mintNft={mintNftAccept}
-            closeMint={mintNftClose}
-          ></MintNftModal>
-        )}
-      </>
-    </div>
+    </GameStatsContext.Provider>
   );
 };
 

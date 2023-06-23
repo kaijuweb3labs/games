@@ -24,7 +24,7 @@ body {
 
 @layer components {
   .sidebar-item {
-    @apply p-2 md:mr-[16px]
+    @apply p-2 md:mr-[16px] cursor-pointer
     rounded-[12px] hover:bg-[#2F3146] transition duration-300;
   }
 

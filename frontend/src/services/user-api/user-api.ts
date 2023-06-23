@@ -17,7 +17,7 @@ export const getUserDetailsByAddress = async (
     })
     .then((res) => res.data)
     .catch((e) => {
-      console.log(e);
+      console.error(e);
       return null;
     });
 };

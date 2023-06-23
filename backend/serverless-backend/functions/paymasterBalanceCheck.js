@@ -22,7 +22,7 @@ module.exports.paymasterBalanceCheck = async (event) => {
     `;
 
     if (balance_ < parseInt(process.env.PAYMASTER_THRESHOLD_VALUE)){
-      await sendMail(`Kaiju Paymaster (${process.env.PAYMASTER_CONTRACT}) Balance`, emailData);
+      await sendMail(`Kaiju ${process.env.STAGE} Paymaster (${process.env.PAYMASTER_CONTRACT}) Balance Low`, emailData);
     }
     
     return {

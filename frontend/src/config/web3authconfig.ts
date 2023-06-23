@@ -1,4 +1,4 @@
-export default {
+const config = {
   clientId: process.env.NEXT_PUBLIC_W3AUTH_CLIENTID,
   chainConfig: {
     chainNamespace: process.env.NEXT_PUBLIC_W3AUTH_CHAIN_NAMESPACE,
@@ -9,3 +9,5 @@ export default {
   verifier: process.env.NEXT_PUBLIC_W3AUTH_VERIFIER,
   subVerifier: process.env.NEXT_PUBLIC_W3AUTH_SUB_VERIFIER_WEB,
 };
+
+export default config;

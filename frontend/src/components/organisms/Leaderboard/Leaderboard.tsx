@@ -3,18 +3,19 @@ import LeaderboardRow from "./LeaderboardRow";
 import { useReduxDispatch, useReduxSelector } from "@/redux/hooks";
 import { fetchLeaderBoard, selectLeaderBoard } from "@/redux/slices/game";
 import { selectActiveNetwork } from "@/redux/slices/wallet";
-import { ScreenSizeBreakpoint, TilesScreenTransformFactor } from "@/constants/constants";
+import {
+  ScreenSizeBreakpoint,
+  TilesScreenTransformFactor,
+} from "@/constants/constants";
 
 const Leaderboard: React.FC = () => {
   const reduxDispatch = useReduxDispatch();
   const activeNet = useReduxSelector(selectActiveNetwork);
   const leaderBoard = useReduxSelector(selectLeaderBoard);
 
-  console.log(leaderBoard);
-
   useEffect(() => {
     reduxDispatch(fetchLeaderBoard());
-  }, [activeNet]);
+  }, [activeNet, reduxDispatch]);
 
   const mobileLeaderboard = useMemo(() => {
     if (typeof window !== "undefined") {
@@ -24,7 +25,7 @@ const Leaderboard: React.FC = () => {
       return false;
     }
     return false;
-  }, [window]);
+  }, []);
 
   const leaderboardData = useMemo(() => {
     if (mobileLeaderboard) {
@@ -33,10 +34,8 @@ const Leaderboard: React.FC = () => {
     return leaderBoard.slice(3);
   }, [mobileLeaderboard, leaderBoard]);
 
-  console.log(leaderboardData);
-
   return (
-    leaderBoard && leaderBoard.length > 3 && (
+    leaderboardData && leaderboardData.length > 0 && (
       <div className="flex flex-4 flex-col bg-[#1C1D29] rounded-[30px] p-[16px] overflow-y-scroll no-scrollbar mt-[26px] lg:mt-0">
         <div className="overflow-y-scroll no-scrollbar">
           <table className="w-full border-collapse text-left">
@@ -70,17 +69,17 @@ const Leaderboard: React.FC = () => {
             </thead>
             <tbody>
               {leaderboardData.map((leader, ind) => {
-                  return (
-                    <LeaderboardRow
-                      displayName={leader.profileName}
-                      score={leader.score}
-                      image={leader.profilePicture}
-                      key={ind.toString()}
-                      place={mobileLeaderboard ? ind+1 : ind+4} 
-                      txHash={leader.transactionHash}
-                    />
-                  );
-                })}
+                return (
+                  <LeaderboardRow
+                    displayName={leader.profileName}
+                    score={leader.score}
+                    image={leader.profilePicture}
+                    key={ind.toString()}
+                    place={mobileLeaderboard ? ind + 1 : ind + 4}
+                    txHash={leader.transactionHash}
+                  />
+                );
+              })}
             </tbody>
           </table>
         </div>

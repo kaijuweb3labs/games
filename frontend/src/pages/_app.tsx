@@ -10,6 +10,7 @@ import { Box, Grid } from "@mui/material";
 import Lottie from "react-lottie";
 import * as animationData from "../assets/animations/loading.json";
 import Loader from "@/components/molecules/Loader";
+import Head from "next/head";
 export default function App({ Component, ...rest }: AppProps) {
   const { store, props } = wrapper.useWrappedStore(rest);
 
@@ -21,6 +22,9 @@ export default function App({ Component, ...rest }: AppProps) {
         <AuthProvider>
           <div>
             <main style={{ display: "flex" }}>
+              <Head>
+                <title>Kaiju Arcade 2048 | Kaiju Web3 Labs</title>
+              </Head>
               <Component {...pageProps} />
             </main>
           </div>

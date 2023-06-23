@@ -34,6 +34,7 @@ import {
   gSafeAccountFactoryABI,
 } from "./contracts";
 import { BaseAccountAPI } from "@account-abstraction/sdk/dist/src/BaseAccountAPI";
+import { formatUnits } from "@ethersproject/units";
 
 export enum Operation {
   Call,
@@ -127,11 +128,11 @@ class GAccountAPI extends BaseAccountAPI {
     return this.entryPointView1.callStatic
       .getUserOpHash({ ...op, signature: "0x" })
       .then((v) => {
-        console.log("Userop hash by onchain..................", v);
+        console.log("Userop hash by onchain...", v);
         return v;
       })
       .catch((e) => {
-        console.log("onchain userophash failed", e);
+        console.error("onchain userophash failed", e);
         return "";
       });
   }
@@ -176,7 +177,7 @@ class GAccountAPI extends BaseAccountAPI {
     const accountContract = await this._getAccountContract();
 
     return await (accountContract as any).getNonce().then((v: any) => {
-      console.log("Nonce for account", v);
+      // console.log("Nonce for account", v);
       return v;
     });
   }
@@ -266,8 +267,7 @@ class GAccountAPI extends BaseAccountAPI {
             detailsForUserOp.data
           )
         : "0x";
-    this.overheads?.fixed;
-    const callGasLimit =
+    let callGasLimit =
       parseNumber(detailsForUserOp.gasLimit) ??
       (await this.provider
         .estimateGas({
@@ -280,11 +280,17 @@ class GAccountAPI extends BaseAccountAPI {
           return BigNumber.from("50803");
         }));
     console.info("Gas feee", callGasLimit);
+    const isDeployed = await this.isAccountDeployed();
+    if (!isDeployed) {
+      callGasLimit = callGasLimit.mul(5).mul(15);
+      console.info("New gas fee", callGasLimit);
+    }
     return {
       callData,
       callGasLimit: callGasLimit.add(BigNumber.from(this.overheads?.fixed)),
     };
   }
+
   /**
    * create a UserOperation, filling all details (except signature)
    * - if account is not yet created, add initCode to deploy it.
@@ -294,18 +300,19 @@ class GAccountAPI extends BaseAccountAPI {
   async createUnsignedUserOp(
     info: TransactionDetailsForUserOp
   ): Promise<UserOperationStruct> {
+    // console.log("Create unsigned userop");
     const { callData, callGasLimit } =
       await this.encodeUserOpCallDataAndGasLimit(info);
     const initCode = await this.getInitCode();
 
     const initGas = await this.estimateCreationGas(initCode);
     const verificationGasLimit = BigNumber.from(
-      await this.getVerificationGasLimit()
+      info.verificationGasLimit || (await this.getVerificationGasLimit())
     ).add(initGas);
-    console.error("Verification gas limit", verificationGasLimit);
+    console.warn("Verification gas limit", verificationGasLimit);
     let { maxFeePerGas, maxPriorityFeePerGas } = info;
     if (maxFeePerGas == null || maxPriorityFeePerGas == null) {
-      const feeData = await this.provider.getFeeData();
+      const feeData = await GAccountAPI.getGasPrice(this.providerUrl);
       if (maxFeePerGas == null) {
         maxFeePerGas = feeData.maxFeePerGas ?? undefined;
       }
@@ -313,7 +320,7 @@ class GAccountAPI extends BaseAccountAPI {
         maxPriorityFeePerGas = feeData.maxPriorityFeePerGas ?? undefined;
       }
 
-      console.error("Fee data", feeData);
+      console.warn("Fee data", feeData);
     }
 
     const partialUserOp: any = {
@@ -354,18 +361,16 @@ class GAccountAPI extends BaseAccountAPI {
         partialUserOp.paymasterAndData = pm_Response.paymasterAndData;
       }
     } else {
-      console.log(
-        "..........................Paymaster not defined..................."
-      );
+      console.error("Paymaster not defined");
     }
     if (!preVerificationGas) {
-      console.log("For previrification Gas", partialUserOp);
+      // console.log("For previrification Gas", partialUserOp);
 
       preVerificationGas = await this.getPreVerificationGas(partialUserOp);
       preVerificationGas += 1000;
     }
 
-    console.error(
+    console.warn(
       "Max prefund1",
       BigNumber.from(preVerificationGas)
         .add(BigNumber.from(partialUserOp.verificationGasLimit).mul(3))
@@ -378,6 +383,46 @@ class GAccountAPI extends BaseAccountAPI {
       signature: "",
     };
   }
+
+  reCreateSignedUserOp = async (userOp: UserOperationStruct) => {
+    let partialUserOp = userOp;
+    partialUserOp.signature = "0x";
+    if (this.paymasterAPI != null && this.paymasterAPI.paymasterUrl) {
+      // fill (partial) preVerificationGas (all except the cost of the generated paymasterAndData)
+
+      const pm_Response = await this.paymasterAPI.sponsorUserOperation(
+        partialUserOp,
+        this.entryPointAddress,
+        {
+          type: "sponsor",
+          address: "0x",
+        }
+      );
+
+      if (pm_Response) {
+        partialUserOp.preVerificationGas = pm_Response.preVerificationGas;
+        partialUserOp.verificationGasLimit = BigNumber.from(
+          pm_Response.verificationGasLimit
+        );
+        partialUserOp.callGasLimit = BigNumber.from(pm_Response.callGasLimit);
+
+        partialUserOp.maxFeePerGas = BigNumber.from(pm_Response.maxFeePerGas);
+        partialUserOp.maxPriorityFeePerGas = BigNumber.from(
+          pm_Response.maxPriorityFeePerGas
+        );
+        partialUserOp.paymasterAndData = pm_Response.paymasterAndData;
+      }
+    } else {
+      console.error("Paymaster not defined");
+    }
+    return {
+      ...partialUserOp,
+      signature: await this.signUserOpHash(
+        await this.getUserOpHash(partialUserOp)
+      ),
+    };
+  };
+
   createUnsignedUserOpForTransaction = async (
     transaction: EthersTransactionRequest
   ): Promise<UserOperationStruct> => {
@@ -410,23 +455,94 @@ class GAccountAPI extends BaseAccountAPI {
     userOp: UserOperationStruct
   ): Promise<TransactionReceipt | null | undefined> => {
     if (this.bundler) {
-      this.bundler
+      let lastUserOp = userOp;
+      const estimation:
+        | {
+            callGasLimit: number;
+            preVerificationGas: number;
+            verificationGas: number;
+          }
+        | undefined = await this.bundler
         .estimateUserOpGas(userOp)
-        .then((est) => console.info("Estimation", est))
-        .catch((e) => console.error(e));
-      const userOpHash = await this.bundler.sendUserOpToBundler(userOp);
-      console.log("Userop Hash=============================", userOpHash);
+        .then((v) => v as any)
+        .catch((e) => {
+          console.warn(
+            "Estimation for Recreation Failed! UserOp won't recreate if It exceed the Gas Limit"
+          );
+        });
 
-      const hash = await this.getUserOpEventRPC(
-        await userOp.sender,
-        userOpHash
-      ).then((res) => {
-        console.log("Userop Event", res);
-        if (res) {
-          return this.getTxn(res.transactionHash);
+      if (estimation) {
+        if (
+          BigNumber.from(estimation.verificationGas)
+            .sub(await userOp.verificationGasLimit)
+            .abs()
+            .gt(20000)
+        ) {
+          console.log("Re Creating User Op...", estimation.verificationGas);
+          lastUserOp = await this.reCreateSignedUserOp({
+            ...userOp,
+            verificationGasLimit: BigNumber.from(estimation.verificationGas),
+          });
         }
-      });
-      return hash;
+      }
+      try {
+        const userOpHash = await this.bundler.sendUserOpToBundler(lastUserOp);
+        console.log("Userop Hash=============================", userOpHash);
+        const hash = await this.getUserOpEventRPC(
+          await lastUserOp.sender,
+          userOpHash
+        ).then((res) => {
+          console.log("Userop Event", res);
+          if (res) {
+            return this.getTxn(res.transactionHash);
+          }
+        });
+        return hash;
+      } catch (e) {
+        console.log(e);
+        if (!e.body) {
+          return;
+        }
+
+        const errBody = JSON.parse(e.body);
+        if (errBody.error) {
+          if (errBody.code === -32602) {
+            if (
+              (errBody.data as string).includes("replacement op must increase")
+            ) {
+              console.log("Replacing");
+              lastUserOp = await this.reCreateSignedUserOp({
+                ...userOp,
+                maxFeePerGas: BigNumber.from(await lastUserOp.maxFeePerGas)
+                  .div(100)
+                  .mul(110),
+                maxPriorityFeePerGas: BigNumber.from(
+                  await lastUserOp.maxPriorityFeePerGas
+                )
+                  .div(100)
+                  .mul(110),
+              });
+              const userOpHash = await this.bundler.sendUserOpToBundler(
+                lastUserOp
+              );
+              console.log(
+                "Userop Hash=============================",
+                userOpHash
+              );
+              const hash = await this.getUserOpEventRPC(
+                await lastUserOp.sender,
+                userOpHash
+              ).then((res) => {
+                console.log("Userop Event", res);
+                if (res) {
+                  return this.getTxn(res.transactionHash);
+                }
+              });
+              return hash;
+            }
+          }
+        }
+      }
     }
     return null;
   };
@@ -446,7 +562,7 @@ class GAccountAPI extends BaseAccountAPI {
       console.log("Finding transaction", userOpHash, address);
       console.log("Block number", block.number - 1000);
       if (events.length > 0) {
-        console.log(events[0]);
+        // console.log(events[0]);
         return events[0];
       }
       await new Promise((resolve) => setTimeout(resolve, interval));
@@ -466,7 +582,7 @@ class GAccountAPI extends BaseAccountAPI {
       );
 
       if (events.length > 0) {
-        console.log(events[0].args.revertReason);
+        // console.log(events[0].args.revertReason);
         return events[0].transactionHash;
       }
       await new Promise((resolve) => setTimeout(resolve, interval));
@@ -486,8 +602,23 @@ class GAccountAPI extends BaseAccountAPI {
       const maxFeePerGas = block.baseFeePerGas
         ? block.baseFeePerGas.mul(2).add(maxPriorityFeePerGas)
         : maxPriorityFeePerGas;
-      console.log(maxFeePerGas, maxPriorityFeePerGas);
-      return { maxFeePerGas, maxPriorityFeePerGas };
+      console.log(
+        "estimated fees",
+        formatUnits(maxFeePerGas, "gwei"),
+        formatUnits(maxPriorityFeePerGas, "gwei")
+      );
+      // fetch("https://gasstation.polygon.technology/v2")
+      //   .then((v) => v.json())
+      //   .then((v) => {
+      //     console.error("gas station estimations", v);
+      //   })
+      //   .catch((e) => {
+      //     console.log(e);
+      //   });
+      return {
+        maxFeePerGas: maxFeePerGas,
+        maxPriorityFeePerGas: maxPriorityFeePerGas,
+      };
     } catch (e) {
       console.error("Failed to estimate ");
       return {
@@ -496,6 +627,7 @@ class GAccountAPI extends BaseAccountAPI {
       };
     }
   }
+
   async getTxn(txnHash: string) {
     return this.provider.getTransactionReceipt(txnHash);
   }
@@ -515,6 +647,16 @@ class GAccountAPI extends BaseAccountAPI {
     const bal = await contract.balanceOf(address);
     return BigNumber.from(bal);
   };
+
+  async isAccountDeployed() {
+    const senderAddressCode = await this.provider.getCode(
+      this.getAccountAddress()
+    );
+    if (senderAddressCode.length > 2) {
+      return true;
+    }
+    return false;
+  }
 }
 
 export default GAccountAPI;

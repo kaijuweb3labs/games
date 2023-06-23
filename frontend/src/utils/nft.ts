@@ -6,7 +6,7 @@ export const getNftsByOwner = (address: string, limit = 9) => {
   )
     .then((res) => res.json())
     .then((resJson) => {
-      console.log(resJson);
+      // console.log(resJson);
       return {
         totalCount: resJson.data.totalCount,
         ownedNfts: resJson.data.ownedNfts.slice(-limit),

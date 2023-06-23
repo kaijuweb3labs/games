@@ -58,6 +58,7 @@ export interface TransactionDetailsForUserOp {
   maxFeePerGas?: BigNumberish;
   maxPriorityFeePerGas?: BigNumberish;
   nonce?: BigNumberish;
+  verificationGasLimit?: BigNumberish;
 }
 export type EthersTransactionRequest = {
   to: string;

@@ -16,24 +16,23 @@ export const areTilesEqual = (t1: Tile, t2: Tile): boolean => {
   );
 };
 
-export const isGameWon = (tiles: Tile[]) => {
+export const is2048Achieved = (tiles: Tile[]) => {
   return tiles.some((tile) => tile.value === 2048);
 };
 
 export const isGameOver = (tiles: Tile[]) => {
-
   const tilesOnSamePosition = (tiles: Tile[]) => {
     const tilesMap = {};
-    for(let i = 0; i< tiles.length; i++){
+    for (let i = 0; i < tiles.length; i++) {
       const key = `${tiles[i].positionX}${tiles[i].positionY}`;
-      if(tilesMap[key]){
+      if (tilesMap[key]) {
         return true;
       }
       tilesMap[key] = true;
     }
 
     return false;
-  }
+  };
 
   if (tiles.length < 16 || tilesOnSamePosition(tiles)) {
     return false;
@@ -148,7 +147,7 @@ const shift = (
   direction === "left" && result.reverse();
   let i = result.length - 1;
   while (i >= 1) {
-    if (result[i].value === result[i - 1].value && result[i].value !== 2048) {
+    if (result[i].value === result[i - 1].value) {
       for (let j = 0; j <= i - 1; j++) {
         const shift = direction === "right" ? 1 : -1;
         setColumn(result[j], getColumn(result[j]) + shift);
@@ -163,12 +162,15 @@ const shift = (
   return result;
 };
 
-export const generateBoard = (tilesCount: number = 2, previousRandom:number): Tile[] => {
+export const generateBoard = (
+  tilesCount: number = 2,
+  previousRandom: number
+): Tile[] => {
   let tiles = [];
-  let newTile = createRandomTile(tiles, previousRandom)
+  let newTile = createRandomTile(tiles, previousRandom);
   tiles = [...tiles, newTile];
   while (tilesCount - 1 > 0) {
-    newTile = createRandomTile(tiles, newTile.lastRandom)
+    newTile = createRandomTile(tiles, newTile.lastRandom);
     tiles = [...tiles, newTile];
     tilesCount--;
   }
@@ -176,29 +178,27 @@ export const generateBoard = (tilesCount: number = 2, previousRandom:number): Ti
   return tiles;
 };
 
-export const createRandomTile = (tiles: Tile[], previousRandom:number): Tile => {
+export const createRandomTile = (
+  tiles: Tile[],
+  previousRandom: number
+): Tile => {
   const getCoordinates = (position: number): [number, number] => {
     const x = Math.floor(position / 4);
     const y = position % 4;
     return [x, y];
   };
 
+  const firstRandom = generateRandom(previousRandom);
 
-  const firstRandom = generateRandom(previousRandom)
-
-  
-
-  let position = Math.floor((firstRandom/10000) * 16);
+  let position = firstRandom % 16;
   let coordinates = getCoordinates(position);
   while (isExists(tiles, ...coordinates)) {
-
     position = position === 15 ? 0 : position + 1;
     coordinates = getCoordinates(position);
   }
 
-  const secoundRandom = generateRandom(firstRandom)
-  const value: Value = (secoundRandom/10000) <= 0.2 ? 4 : 2;
-  
+  const secoundRandom = generateRandom(firstRandom);
+  const value: Value = secoundRandom / 10000 <= 0.2 ? 4 : 2;
 
   return {
     id: getNextId(tiles),
@@ -206,7 +206,7 @@ export const createRandomTile = (tiles: Tile[], previousRandom:number): Tile => 
     type: "new",
     positionX: coordinates[0],
     positionY: coordinates[1],
-    lastRandom: secoundRandom
+    lastRandom: secoundRandom,
   };
 };
 
@@ -235,20 +235,18 @@ export const getMaxId = (tiles: Tile[]): number => {
   return Math.max.apply(Math, [0, ...tiles.map((x) => x.id)]);
 };
 
-export const MOVES_MAP: {[key: string]: Function } = {
-  "up": moveUp,
-  "down": moveDown,
-  "right": moveRight,
-  "left": moveLeft,
+export const MOVES_MAP: { [key: string]: Function } = {
+  up: moveUp,
+  down: moveDown,
+  right: moveRight,
+  left: moveLeft,
 };
 
 export const generateRandom = (previousSeed: number): number => {
-  const a =16807;
-  const c =0;
-  const m =2**31 - 1;
+  const a = 16807;
+  const c = 347;
+  const m = 10000;
   // Perform some calculations using the previous seed
-  previousSeed = ((((previousSeed * a) + c) % m)%10000);
+  previousSeed = (previousSeed * a + c) % m;
   return previousSeed;
 };
-
-

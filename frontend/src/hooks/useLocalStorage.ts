@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useReducer } from "react";
+import useGameRefresh from "./useGameRefresh";
 
 export const GAME_ID = "2048game";
 
@@ -7,7 +8,6 @@ const useStateReducer = (prevState, newState) => {
 };
 
 const getInitialValue = (key: string, defaultValue: any) => {
-  
   try {
     const gameState = JSON.parse(window?.localStorage.getItem(GAME_ID));
     const value = gameState?.[key];
@@ -24,15 +24,26 @@ function useGameLocalStorage<T>(
   defaultValue: T,
   reducer = useStateReducer
 ): [T, React.Dispatch<any>] {
+  const newInitState = useCallback(() => {
+    // console.log("useReducer initializer called");
+    return getInitialValue(key, defaultValue);
+  }, [key, defaultValue]);
 
-  const newInitState = useCallback(()=>{
-    return getInitialValue(key, defaultValue)
-  },[])
+  const [value, dispatch] = useReducer(reducer, defaultValue, newInitState);
 
-  const [value, dispatch] = useReducer(
-    reducer,
-    newInitState()
-  );
+  useEffect(() => {
+    const resetGame = () => {
+      console.log("Reset game..................");
+      dispatch({
+        type: "REPLACE_STATE",
+        payload: getInitialValue(key, defaultValue),
+      });
+    };
+    window.addEventListener("RESET_GAME", resetGame);
+    return () => {
+      window.removeEventListener("RESET_GAME", resetGame);
+    };
+  }, [defaultValue, key]);
 
   useEffect(() => {
     let state = JSON.parse(window?.localStorage.getItem(GAME_ID)) || {};
@@ -40,6 +51,7 @@ function useGameLocalStorage<T>(
     state[key] = value;
     window?.localStorage.setItem(GAME_ID, JSON.stringify(state));
   }, [value, key]);
+
   return [value, dispatch];
 }
 

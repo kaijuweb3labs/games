@@ -4,18 +4,16 @@ import Tiles from "../Tiles";
 import styles from "./Board.module.scss";
 import Lottie from "react-lottie";
 import { useReduxSelector } from "@/redux/hooks";
-import { selectNewGamePressed } from "@/redux/slices/user";
 import loadingAnimationData from "./../../../assets/animations/loading.json";
 import { GameStageEnum, selectGameStage } from "@/redux/slices/game";
 
 const BoardGrid = () => {
+  
   const grid = Array.from(Array(4).keys()).map((rowId) => {
     const columns = Array.from(Array(4).keys()).map((colId) => (
-      <div
-        key={colId}
-        className={styles.cell}
-      />
+      <div key={colId} className={styles.cell} />
     ));
+
     return (
       <div key={rowId} className={styles.row}>
         {columns}
@@ -27,7 +25,6 @@ const BoardGrid = () => {
 };
 
 const Board = (props: { tiles: Tile[] }) => {
-  const createGameButtonPress = useReduxSelector(selectNewGamePressed);
   const gameStage = useReduxSelector(selectGameStage);
 
   return (
@@ -40,8 +37,7 @@ const Board = (props: { tiles: Tile[] }) => {
             className="justify-center items-center 
             rounded-[30px] bg-black/70 inset-0 absolute z-10"
           >
-            {" "}
-            {createGameButtonPress && (
+            {gameStage === GameStageEnum.INITIALIZING && (
               <div className="h-full w-full flex flex-col justify-center items-center">
                 <h1 className="flex font-bold text-white text-center lg:text-[20px]">
                   Game Initializing

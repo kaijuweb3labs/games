@@ -16,7 +16,7 @@ const Sponsor: React.FC = () => {
         <div className="hidden md:inline-block h-[2px] bg-white opacity-10" />
         <div className="flex flex-col space-y-[8px]">
           <h3 className="text-[12px] md:text-[14px] font-bold text-white">
-            Today's reward
+            Today&apos;s reward
           </h3>
           <div className="flex flex-row">
             <div className="flex flex-row items-center space-x-[6px]">

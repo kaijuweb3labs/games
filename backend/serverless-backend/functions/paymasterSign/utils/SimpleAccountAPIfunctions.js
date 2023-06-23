@@ -18,6 +18,5 @@ module.exports.getVerificationGasLimit = async (initCode)=>{
 }
 
 module.exports.getPreVerificationGas = async (userOp) => {
-    console.log("Pannoooooooooooooooooooooooooooooooooooooooooooooooo")
     return await calcPreVerificationGas(userOp)
 }

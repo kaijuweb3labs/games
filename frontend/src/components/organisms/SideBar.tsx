@@ -1,7 +1,7 @@
 import { Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { useReduxDispatch, useReduxSelector } from "@/redux/hooks";
-import { setIsBalancesModalOpen, setIsSideBarOpen } from "@/redux/slices/modals";
+import { setIsBalancesModalOpen, setIsComingSoonModlOpen, setIsSideBarOpen } from "@/redux/slices/modals";
 import { useRouter } from "next/router";
 import { NetworkBaseAsset } from "@/types/network";
 import { selectAccountBalances, selectPrimaryAsset } from "@/redux/slices/wallet";
@@ -77,7 +77,7 @@ const SideBar: React.FC = () => {
               <button
                 onClick={() => dispatch(setIsBalancesModalOpen(true))}
                 className="md:hidden flex flex-row items-center bg-[#1C1D29] h-[42px] w-[130px]
-                justify-center rounded-[14px] hover:scale-110 transition duration-300 mt-[40px]"
+                justify-center rounded-[14px] hover:scale-110 transition duration-300 mt-[40px] ring-0 outline-0"
               >
                 <img src="/wallet.svg" alt="Wallet" className="h-[15px] w-[15px]" />
                 <h1 className="text-[16px] font-medium text-white ml-[8px]">
@@ -113,7 +113,10 @@ const SideBar: React.FC = () => {
                   />
                   <h3 className="text-[16px] md:text-[14px] text-white">2048</h3>
                 </div>
-                <div className="flex flex-row space-x-[8px] sidebar-item">
+                <div 
+                  className="flex flex-row space-x-[8px] sidebar-item"
+                  onClick={() => dispatch(setIsComingSoonModlOpen(true))}
+                >
                   <img
                     src="/3InaRow.svg"
                     alt="3 In a Row"
@@ -121,7 +124,10 @@ const SideBar: React.FC = () => {
                   />
                   <h3 className="text-[16px] md:text-[14px] text-white">3 in a Row</h3>
                 </div>
-                <div className="flex flex-row space-x-[8px] sidebar-item">
+                <div
+                  className="flex flex-row space-x-[8px] sidebar-item"
+                  onClick={() => dispatch(setIsComingSoonModlOpen(true))}
+                >
                   <img
                     src="/tic-tac-toe.svg"
                     alt="Tic Tac Toe"
@@ -129,14 +135,23 @@ const SideBar: React.FC = () => {
                   />
                   <h3 className="text-[16px] md:text-[14px] text-white">Tic-Tac-Toe</h3>
                 </div>
-                <p className="text-[16px] md:text-[14px] text-[#C64CB8] px-[8px]">
+                <p
+                  className="text-[16px] md:text-[14px] text-[#C64CB8] px-[8px] sidebar-item"
+                  onClick={() => dispatch(setIsComingSoonModlOpen(true))}
+                >
                   All Games
                 </p>
               </div>
-              <h3 className="text-[16px] md:text-[14px] text-white mt-[40px] sidebar-item">
+              <h3
+                className="text-[16px] md:text-[14px] text-white mt-[40px] sidebar-item"
+                onClick={() => dispatch(setIsComingSoonModlOpen(true))}
+              >
                 My rewards
               </h3>
-              <h3 className="text-[16px] md:text-[14px] text-white mt-[20px] sidebar-item">
+              <h3
+                className="text-[16px] md:text-[14px] text-white mt-[20px] sidebar-item"
+                onClick={() => dispatch(setIsComingSoonModlOpen(true))}
+              >
                 Store
               </h3>
             </Dialog.Panel>

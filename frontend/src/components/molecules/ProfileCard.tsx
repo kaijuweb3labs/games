@@ -5,9 +5,8 @@ import {
   selectUserDetails,
   signOutUser,
 } from "@/redux/slices/user";
-import { Popover, Tooltip } from "@mui/material";
+import { Tooltip } from "@mui/material";
 import React, { useCallback, useState } from "react";
-import TextAtom from "../atoms/TextAtom";
 import { selectAccountAddress } from "@/redux/slices/wallet";
 
 function ProfileCard() {
@@ -19,7 +18,7 @@ function ProfileCard() {
 
   const handleClick = useCallback(() => {
     reduxDispatch(signOutUser());
-  }, []);
+  }, [reduxDispatch]);
 
   if (!userData) {
     return;
@@ -40,14 +39,20 @@ function ProfileCard() {
           </div>
 
           <img
-            src={userData.picture}
+            src={
+              userApiDetails && userApiDetails.userProfileImage !== '' && userApiDetails.userProfileImage !== undefined
+                ? userApiDetails.userProfileImage
+                : userData.picture !== '' && userData.picture !== undefined
+                ? userData.picture
+                : '/profilePlaceholder.svg'
+            }
             alt="Profile"
             className="h-[38px] w-[38px] rounded-full"
           />
         </button>
 
         <div className="flex flex-col ml-[12px]">
-          <h1 className="text-[16px] font-bold text-white">
+          <h1 className="text-[16px] font-bold text-white line-clamp-1">
             {userApiDetails ? userApiDetails.name : userData.displayName}
           </h1>
           <Tooltip title={toolTipText} arrow>
@@ -59,7 +64,7 @@ function ProfileCard() {
                   settoolTipText("Copy");
                 }, 3000);
               }}
-              className="text-[12px] text-center font-bold rounded text-[#C64CB8] hover:bg-[#2F3146] cursor-pointer transition duration-300"
+              className="text-[12px] font-bold rounded text-[#C64CB8] hover:bg-[#2F3146] cursor-pointer transition duration-300"
             >
               {userAddress &&
                 `${userAddress.slice(0, 10)}...${userAddress.slice(35)}`}

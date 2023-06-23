@@ -5,8 +5,6 @@ import { useContext, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import {
   changeNewGamePressed,
-  selectNewGamePressed,
-  selectUser,
 } from "@/redux/slices/user";
 import Popover from "@mui/material/Popover";
 import TokenBalances from "./Popup/TokenBalances";
@@ -29,15 +27,13 @@ type HeaderProp = {
 };
 
 const Header: React.FC<HeaderProp> = ({ isLoged = true }) => {
-  const user = useSelector(selectUser);
   const reduxDispatch = useReduxDispatch();
-  const createGameButtonPress = useSelector(selectNewGamePressed);
   const dispatch = useReduxDispatch();
   const primaryAsset: NetworkBaseAsset = useReduxSelector(selectPrimaryAsset);
   const balances = useReduxSelector(selectAccountBalances);
   const [pingNewgameBtn, setpingNewgameBtn] = useState(false);
   const gameStage = useReduxSelector(selectGameStage);
-  
+
   const onMenuClick = () => {
     dispatch(setIsSideBarOpen(true));
   };
@@ -91,7 +87,11 @@ const Header: React.FC<HeaderProp> = ({ isLoged = true }) => {
       return parseFloat(balances[primaryAsset.id]?.assetAmount.coin).toFixed(1);
     }
   };
-
+  const isDisabled =
+    gameStage === GameStageEnum.INITIALIZING ||
+    gameStage === GameStageEnum.MINTING ||
+    gameStage === GameStageEnum.MINT ||
+    gameStage === GameStageEnum.MINTED;
   return (
     <div className="w-full flex flex-row items-center">
       <div
@@ -108,10 +108,7 @@ const Header: React.FC<HeaderProp> = ({ isLoged = true }) => {
       </div>
       <div className={`flex flex-row ml-auto`}>
         <button
-          disabled={
-            gameStage === GameStageEnum.INITIALIZING ||
-            gameStage === GameStageEnum.MINTING
-          }
+          disabled={isDisabled}
           className="hidden md:inline-block items-center bg-[#a11bc2] 
           h-[42px] w-[130px] cursor-pointer rounded-[14px] hover:scale-110 transition duration-300 disabled:opacity-25"
           onClick={() => {
@@ -132,10 +129,12 @@ const Header: React.FC<HeaderProp> = ({ isLoged = true }) => {
             New Game
           </h1>
         </button>
-        <div
-          aria-selected={pingNewgameBtn}
-          className={`hidden md:inline-block h-[42px] w-[120px] bg-[#a11bc2] rounded-[14px] absolute -z-10 aria-selected:animate-ping`}
-        ></div>
+        {!isDisabled && (
+          <div
+            aria-selected={pingNewgameBtn}
+            className={`hidden md:inline-block h-[42px] w-[120px] bg-[#a11bc2] rounded-[14px] absolute -z-10 aria-selected:animate-ping`}
+          ></div>
+        )}
       </div>
 
       <button

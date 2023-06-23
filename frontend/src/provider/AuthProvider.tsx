@@ -1,6 +1,5 @@
 import {
   UserState,
-  fetchUserDetails,
   initAuth,
   initializeUser,
   selectUser,
@@ -16,10 +15,10 @@ const AuthProvider: React.FC<{ children: JSX.Element }> = ({ children }) => {
   const [isInitialized, setisInitialized] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
-  const [isPublicRoute, setIsPublicRoute] = useState(false);
+  const [isHideRoute, setHide] = useState(false);
   const userState: UserState = useSelector(selectUser);
 
-  console.log(userState);
+  // console.log(userState);
   useEffect(() => {
     dispatch(initAuth()).then(() => {
       setisInitialized(true);
@@ -27,30 +26,15 @@ const AuthProvider: React.FC<{ children: JSX.Element }> = ({ children }) => {
   }, [dispatch]);
   const authCheck = useCallback(
     async (url: string) => {
-      // redirect to login page if accessing a private page and not logged
-      // Initialization of Service Provider
-      if (userState.uid) {
-        return;
-      }
-      const publicPaths = ["/login", "/2048"];
       const path = url.split("?")[0];
-      if (path.includes("#state")) {
-        // await dispatch(authCallback(path));
-        // window.close();
-        return;
-      }
-      console.log("Call auth callback", path);
-      if (publicPaths.includes(path)) {
-        console.log("Public Route");
-        setIsPublicRoute(true);
-      }
-      if (!userState.uid && !publicPaths.includes(path)) {
-        console.log("No user in private route");
+
+      if (userState.uid && path.includes("login")) {
         router.push({
           pathname: "/2048",
           query: { returnUrl: router.asPath },
         });
       }
+      setHide(false);
     },
     [router, userState.uid]
   );
@@ -60,7 +44,7 @@ const AuthProvider: React.FC<{ children: JSX.Element }> = ({ children }) => {
     authCheck(router.asPath);
 
     // on route change start - hide page content by setting authorized to false
-    const hideContent = () => setIsPublicRoute(false);
+    const hideContent = () => setHide(true);
     router.events.on("routeChangeStart", hideContent);
 
     // on route change complete - run auth check
@@ -79,6 +63,7 @@ const AuthProvider: React.FC<{ children: JSX.Element }> = ({ children }) => {
     const unsubscribe = Hub.listen(
       "auth",
       async ({ payload: { event, data } }) => {
+        // console.log(event, data);
         switch (event) {
           case "signIn":
             const isUser = await dispatch(initializeUser());
@@ -92,6 +77,7 @@ const AuthProvider: React.FC<{ children: JSX.Element }> = ({ children }) => {
           case "signOut":
             break;
           case "customOAuthState":
+            break;
         }
       }
     );
@@ -100,7 +86,7 @@ const AuthProvider: React.FC<{ children: JSX.Element }> = ({ children }) => {
   }, [dispatch, router]);
 
   return isInitialized ? (
-    userState.uid || isPublicRoute ? (
+    userState.uid || !isHideRoute ? (
       <>
         {userState.isLoading && <Loader />}
         {children}

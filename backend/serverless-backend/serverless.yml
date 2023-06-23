@@ -5,6 +5,8 @@ provider:
   name: aws
   runtime: nodejs18.x
   stage: dev
+  timeout: 60
+  region: ${file(./env.yml):${self:provider.stage}.REGION}
   iam:
     role:
       statements:
@@ -19,6 +21,10 @@ provider:
   environment:
     REGION: ${file(./env.yml):${self:provider.stage}.REGION}
     STAGE: ${self:provider.stage}
+    AWS_ACCOUNT_ID: ${file(./env.yml):${self:provider.stage}.AWS_ACCOUNT_ID}
+    SERVICE: ${self:service}
+    MONGODB_URL: ${file(./env.yml):${self:provider.stage}.MONGODB_URL}
+    DB_NAME: ${file(./env.yml):${self:provider.stage}.DB_NAME}
 
 functions:
   PaymasterSign:
@@ -36,6 +42,16 @@ functions:
       GAME_FACTORY_CONTRACT: ${file(./env.yml):${self:provider.stage}.GAME_FACTORY_CONTRACT}
       KAIJU_TOKEN_CONTRACT: ${file(./env.yml):${self:provider.stage}.KAIJU_TOKEN_CONTRACT}
       USDT_CONTRACT: ${file(./env.yml):${self:provider.stage}.USDT_CONTRACT}
+      KARC_REWARD_1: ${file(./env.yml):${self:provider.stage}.KARC_REWARD_1}
+      KARC_REWARD_2: ${file(./env.yml):${self:provider.stage}.KARC_REWARD_2}
+      KARC_REWARD_3: ${file(./env.yml):${self:provider.stage}.KARC_REWARD_3}
+      KARC_REWARD_4: ${file(./env.yml):${self:provider.stage}.KARC_REWARD_4}
+      USDT_REWARD_1: ${file(./env.yml):${self:provider.stage}.USDT_REWARD_1}
+      USDT_REWARD_2: ${file(./env.yml):${self:provider.stage}.USDT_REWARD_2}
+      USDT_REWARD_3: ${file(./env.yml):${self:provider.stage}.USDT_REWARD_3}
+      USDT_REWARD_4: ${file(./env.yml):${self:provider.stage}.USDT_REWARD_4}
+      KARC_DECIMAL: ${file(./env.yml):${self:provider.stage}.KARC_DECIMAL}
+      USDT_DECIMAL: ${file(./env.yml):${self:provider.stage}.USDT_DECIMAL}
   
   paymasterBalanceCheck:
     handler: functions/paymasterBalanceCheck.paymasterBalanceCheck

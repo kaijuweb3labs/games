@@ -110,7 +110,6 @@ export const walletSlice = createSlice({
         aaAddress: AAAccountAddress;
       }>
     ) => {
-      console.log("Set account called..............");
       state.account.address = {
         eoaAccountAddress: action.payload.eoaAddress,
         aaAccountAddress: action.payload.aaAddress,
@@ -123,7 +122,6 @@ export const initializeWallet = createAsyncThunk(
   "wallet/initializeWallet",
   async (_, thunkAPI) => {
     thunkAPI.dispatch(setIsUserLoading(true));
-    console.log("Initializing wallet");
     const { web3auth }: { web3auth: Web3Auth } = thunkAPI.extra as any;
     const curSession = await Auth.currentSession();
 
@@ -131,11 +129,6 @@ export const initializeWallet = createAsyncThunk(
       thunkAPI.dispatch(setIsUserLoading(false));
       return;
     }
-    console.log(
-      "Tokens.....................",
-      curSession.getIdToken().payload.sub,
-      curSession.getIdToken().getJwtToken()
-    );
     const provider = await web3auth
       .connect({
         verifier: web3AuthConfig.verifier, // e.g. `web3auth-sfa-verifier` replace with your verifier name, and it has to be on the same network passed in init().
@@ -149,16 +142,15 @@ export const initializeWallet = createAsyncThunk(
         ],
       })
       .catch((e) => {
-        console.log("Failed to connect to web3", e);
+        console.error("Failed to connect to web3", e);
       });
     if (!provider) {
-      console.log("No provider");
+      console.error("No provider");
       thunkAPI.dispatch(setIsUserLoading(false));
       return;
     }
     const pKey: any = await provider.request({ method: "eth_private_key" });
     // The private key returned here is the CoreKitKey
-    console.log("ETH Private Key", pKey);
 
     if (!pKey) {
       thunkAPI.dispatch(setIsUserLoading(false));
@@ -186,7 +178,7 @@ export const initializeWallet = createAsyncThunk(
         })
       );
     } catch (e) {
-      console.log(e);
+      console.error(e);
     }
 
     thunkAPI.dispatch(setIsUserLoading(false));
@@ -217,7 +209,7 @@ export const fetchBalances = createAsyncThunk(
               selectedNetwork.provider
             );
           } else {
-            console.info(val.contractAddress);
+            // console.info(val.contractAddress);
             bal = await GAccountAPI.getERC20TokenBalance(
               address,
               selectedNetwork.provider,

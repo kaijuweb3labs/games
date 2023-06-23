@@ -1,17 +1,20 @@
-import { UserOperationStruct } from '@account-abstraction/contracts';
-import { PaymasterAPI } from '@account-abstraction/sdk';
-import { hexlify } from '@ethersproject/bytes';
-import { resolveProperties } from '@ethersproject/properties';
-export default class AAPaymasterAPI extends PaymasterAPI {
+import { UserOperationStruct } from "@account-abstraction/contracts";
+import { PaymasterAPI } from "@account-abstraction/sdk";
+import { hexlify } from "@ethersproject/bytes";
+import { resolveProperties } from "@ethersproject/properties";
+export default class AAPaymasterAPI {
   public paymasterUrl?: string;
+  private headerCreator?: () => Promise<Headers>;
   private forceDisable = false;
-  async getPaymasterAndData(userOp: Partial<UserOperationStruct>): Promise<string | undefined> {
+  async getPaymasterAndData(
+    userOp: Partial<UserOperationStruct>
+  ): Promise<string | undefined> {
     return userOp.paymasterAndData?.toString();
   }
   async sponsorUserOperation(
     userOp: Partial<UserOperationStruct>,
     _entryPoint: string,
-    _pmSpecificData: { type: string; address: string },
+    _pmSpecificData: { type: string; address: string }
   ): Promise<{
     paymasterAndData: string;
     preVerificationGas: number;
@@ -22,22 +25,24 @@ export default class AAPaymasterAPI extends PaymasterAPI {
   } | null> {
     const newUserOp = await resolveProperties({
       ...userOp,
-      signature: '0x',
-      paymasterAndData: '0x',
+      signature: "0x",
+      paymasterAndData: "0x",
     });
     if (this.paymasterUrl) {
       return fetch(this.paymasterUrl, {
-        method: 'POST',
+        method: "POST",
         body: JSON.stringify({ params: [newUserOp] }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.headerCreator
+          ? await this.headerCreator()
+          : {
+              "Content-Type": "application/json",
+            },
       })
-        .then(res => {
+        .then((res) => {
           return res.json();
         })
-        .then(res => {
-          console.log('Recieved userop', res.result);
+        .then((res) => {
+          console.log("Recieved userop::", res.result);
           return {
             paymasterAndData: res.result.paymasterAndData,
             preVerificationGas: res.result.preVerificationGas,
@@ -50,11 +55,11 @@ export default class AAPaymasterAPI extends PaymasterAPI {
     }
     return null;
   }
-  public setPaymaster(url?: string) {
+  public setPaymaster(url?: string, headerCreator?: () => Promise<Headers>) {
     this.paymasterUrl = url;
+    this.headerCreator = headerCreator;
   }
   async getDummyPaymasterData() {
-    return this.forceDisable ? '0x' : hexlify(Buffer.alloc(149, 1));
+    return this.forceDisable ? "0x" : hexlify(Buffer.alloc(149, 1));
   }
 }
-

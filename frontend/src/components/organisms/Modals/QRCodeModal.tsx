@@ -2,18 +2,12 @@ import { useReduxDispatch, useReduxSelector } from "@/redux/hooks";
 import { setIsQrModalOpen } from "@/redux/slices/modals";
 import AnimatedModal from "@/components/molecules/AnimatedModal";
 import QRCode from "qrcode.react";
-import { useState } from "react";
 import TextAtom from "@/components/atoms/TextAtom";
 
 const QRCodeModel: React.FC = () => {
   const { isQrModalVisible, selectedApp } = useReduxSelector((state) => state.modals);
   const dispatch = useReduxDispatch();
 
-  const [uri] = useState(
-    selectedApp === 'ios'
-      ? process.env.NEXT_PUBLIC_IOS_APP_URI
-      : process.env.NEXT_PUBLIC_ANDROID_APP_URI
-  );
   const closeModal = () => {
     dispatch(setIsQrModalOpen(false));
   };
@@ -38,7 +32,13 @@ const QRCodeModel: React.FC = () => {
             with Kaiju Wallet App.
           </TextAtom>
           <div className="p-3 bg-white opacity-99">
-            <QRCode value={uri} size={250} />
+            <QRCode 
+              value={
+                selectedApp === "ios" ?
+                process.env.NEXT_PUBLIC_IOS_APP_URI :
+                process.env.NEXT_PUBLIC_ANDROID_APP_URI
+              }
+              size={250} />
           </div>
         </div>
       </div>

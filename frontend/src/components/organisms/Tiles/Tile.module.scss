@@ -132,6 +132,48 @@
     font-size: 28px;
   }
 }
+.tile-4096 {
+  .tileInner {
+    color: #f9f6f2;
+    background: #eec43c;
+    box-shadow: 0 0 30px 10px rgb(243 215 116 / 56%),
+      inset 0 0 0 1px rgb(255 255 255 / 33%);
+    font-size: 35px;
+  }
+  .smallTileInner {
+    border-radius: 1px;
+    z-index: 10;
+    font-size: 28px;
+  }
+}
+.tile-8192 {
+  .tileInner {
+    color: #f9f6f2;
+    background: #ee9b3c;
+    box-shadow: 0 0 30px 10px rgba(243, 173, 116, 0.56),
+      inset 0 0 0 1px rgb(255 255 255 / 33%);
+    font-size: 35px;
+  }
+  .smallTileInner {
+    border-radius: 1px;
+    z-index: 10;
+    font-size: 28px;
+  }
+}
+.tile-0000 {
+  .tileInner {
+    color: #f9f6f2;
+    background: #ee4b3c;
+    box-shadow: 0 0 30px 10px rgba(243, 116, 116, 0.56),
+      inset 0 0 0 1px rgb(255 255 255 / 33%);
+    font-size: 35px;
+  }
+  .smallTileInner {
+    border-radius: 1px;
+    z-index: 10;
+    font-size: 28px;
+  }
+}
 
 @keyframes appear {
   0% {
@@ -161,30 +203,6 @@
 
 @media only screen and (max-width: 520px) {
   .tile {
-    width: 85px;
-    height: 85px;
-    line-height: 85px;
-  }
-
-  .tileInner {
-    font-size: 36px;
-  }
-
-  .tile-1024 {
-    .tileInner {
-      font-size: 28px;
-    }
-  }
-
-  .tile-2048 {
-    .tileInner {
-      font-size: 28px;
-    }
-  }
-}
-
-@media only screen and (max-width: 420px) {
-  .tile {
     width: 64px;
     height: 64px;
     line-height: 64px;
@@ -207,7 +225,7 @@
   }
 }
 
-@media(min-width: 1600px) {
+@media (min-width: 1600px) {
   .tile {
     width: 168px;
     height: 168px;

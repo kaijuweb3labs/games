@@ -33,7 +33,7 @@ const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
   return (
     <tr
       onClick={()=>{
-        window.open(`${TX_SCAN_URL}${txHash}`)
+        window.open(`${TX_SCAN_URL}/tx/${txHash}`)
       }
       }
       className={style}
@@ -48,7 +48,7 @@ const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
         <div className="flex flex-row items-start space-x-[6px] py-[12px]">
           <img
             className="h-[20px] w-[20px] rounded-full"
-            src={image}
+            src={image !== '' && image !== undefined ? image : '/profilePlaceholder.svg'}
             alt="Profile"
           />
           <div className="flex flex-col">
@@ -62,7 +62,7 @@ const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
       </td>
       <td className={`${place === 3 ? 'rounded-br-[10px]' : ''} ${place === 1 ? 'rounded-tr-[10px]' : ''}`}>
         <div className="my-[8px]">
-          <Reward rank={"others"} />
+          <Reward rank={place === 1 || place === 2 || place === 3 ? place : "others"} />
         </div>
       </td>
     </tr>

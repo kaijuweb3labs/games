@@ -4,7 +4,7 @@ console.log(exconfig);
 console.log(web3authconfig);
 console.log(process.env.NEXT_PUBLIC_API_URL);
 export const BASE_API_URL = process.env.NEXT_PUBLIC_API_URL;
-export const TX_SCAN_URL = process.env.NEXT_PUBLIC_TX_SCAN_URL;
+export const TX_SCAN_URL = process.env.NEXT_PUBLIC_BLOCK_EXP;
 export const COLLECTION_ID = process.env.NEXT_PUBLIC_COLLECTION_ID;
 export const NFT_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_KAIJU_NFT;
 export const TEST = true;

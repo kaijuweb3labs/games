@@ -13,7 +13,7 @@ const Login: React.FC = () => {
   return (
     <div className='h-screen w-screen flex flex-col md:justify-center items-center'>
       <div
-        className='w-full md:w-2/3 lg:w-1/2 md:border-[2px] md:border-[#1C1D29]/80 flex flex-row
+        className='w-full md:w-2/3 xl:w-1/2 md:border-[2px] md:border-[#1C1D29]/80 flex flex-row
         p-[12px] md:p-[38px] rounded-[20px] space-x-[40px]'
       >
         <div className='flex flex-3 flex-col justify-center items-center'>
@@ -24,8 +24,8 @@ const Login: React.FC = () => {
             Please log in to Play the Game
           </h1>
           <button
-            className='bg-[#1C1D29] w-full flex flex-row items-center justify-center
-            p-[14px] rounded-[16px] mt-[24px] px-[72px] hover:bg-[#2F3146] transition duration-300'
+            className='bg-[#1C1D29] w-full flex flex-row items-center justify-center space-x-[16px]
+            py-[14px] rounded-[16px] mt-[24px] px-[36px] hover:bg-[#2F3146] transition duration-300'
             onClick={successfulSignIn}
           >
             <img src='/google.svg' alt='Google' className='w-[24px] h-[24px]' />

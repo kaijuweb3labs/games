@@ -13,7 +13,6 @@
   width: 500px;
   height: 500px;
   box-sizing: border-box;
-  touch-action: none;
 }
 
 .gridContainer {
@@ -46,27 +45,6 @@
 }
 
 @media only screen and (max-width: 520px) {
-  .boardContainer {
-    width: 400px;
-    height: 400px;
-    padding-top: 12px;
-    padding-left: 12px;
-  }
-
-  .gridContainer {
-    .row {
-      margin-bottom: 12px;
-
-      .cell {
-        width: 85px;
-        height: 85px;
-        margin-right: 12px;
-      }
-    }
-  }
-}
-
-@media only screen and (max-width: 420px) {
   .boardContainer {
     width: 300px;
     height: 300px;

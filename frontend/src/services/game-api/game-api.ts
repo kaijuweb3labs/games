@@ -1,4 +1,5 @@
 import { COLLECTION_ID, BASE_API_URL } from "@/config";
+import { GameSessionData } from "@/redux/slices/game";
 
 export const createGameSession = async (
   userID: string,
@@ -13,6 +14,15 @@ export const createGameSession = async (
       profileName: displayName,
       profilePicture: picture,
       collectionID: COLLECTION_ID,
+      gameID:"",
+      createdTimeStamp: Date.now(),
+      FEScore:0,
+      contractScore:0,
+      isValid: false,
+      gameState: "START",
+      transactionHash: "",
+      gamePositionHistory:[]
+
     }),
     headers: headers,
   })
@@ -20,11 +30,11 @@ export const createGameSession = async (
       return res.json();
     })
     .then((v) => {
-      console.log("Create Game..................", v);
       // Run the Game and Get the Game Data
+      // console.log("Responce:::::::", v.data)
       return v.data;
     })
-    .catch((e) => console.log(e));
+    .catch((e) => console.error(e));
 };
 
 export const getLeaderBoardAPI = async (
@@ -52,7 +62,7 @@ export const getLeaderBoardAPI = async (
       }
     })
     .catch((e) => {
-      console.log(e);
+      console.error(e);
       return null;
     });
 };
@@ -66,18 +76,20 @@ export const getPersonalBestScore = async (
   })
     .then((res) => res.json())
     .then((v) => v.data["personal-best"])
-    .catch((e) => console.log(e));
+    .catch((e) => console.error(e));
 };
 
 export const updateGame = async (
   {
     gameID,
+    gameSession,
     transactionHash,
     FEScore,
     contractScore,
     isValid,
   }: {
     gameID: string;
+    gameSession: GameSessionData;
     transactionHash: string;
     FEScore: number;
     contractScore: number;
@@ -85,14 +97,15 @@ export const updateGame = async (
   },
   headers: Headers
 ) => {
-  console.log("Update game called............", gameID, FEScore, contractScore);
   return fetch(`${BASE_API_URL}game/updateGame/${gameID}`, {
     method: "POST",
     body: JSON.stringify({
-      transactionHash,
-      FEScore,
-      contractScore,
-      isValid,
+    ...gameSession,
+    gameState: "GAME_OVER",
+    transactionHash:transactionHash,
+    FEScore:FEScore,
+    contractScore:contractScore,
+    isValid:isValid,
     }),
     headers,
   })
@@ -100,19 +113,22 @@ export const updateGame = async (
       return res.json();
     })
     .then((v) => {
-      console.log("Update game...........................", v);
       return v.data;
     })
-    .catch((e) => console.log(e));
+    .catch((e) => console.error(e));
 };
 
 export const getNftMetadataUrl = async (
   {
     score,
     gameId,
+    date,
+    playerName
   }: {
     score: number;
     gameId: string;
+    date: string;
+    playerName: string;
   },
   headers: Headers
 ) => {
@@ -122,6 +138,8 @@ export const getNftMetadataUrl = async (
       params: {
         score: score,
         gameId: gameId,
+        date: date,
+        playerName: playerName
       },
     }),
     headers: headers,
@@ -132,5 +150,44 @@ export const getNftMetadataUrl = async (
     .then((res) => {
       return res.result;
     })
-    .catch((e) => console.log(e));
+    .catch((e) => console.error(e));
 };
+
+export const getByteCode = async ({
+  gameId,
+  FEScore,
+  origMovesLength,
+  movesPerVar,
+  movesEncodedLength,
+  movesEncoded
+
+}: {
+  gameId: string;
+  FEScore: number;
+  origMovesLength: number,
+  movesPerVar: number,
+  movesEncodedLength: number,
+  movesEncoded: number[]
+},
+headers: Headers
+) => {
+  return fetch ( `${BASE_API_URL}game/byteCodeGeneratorForGame`, {
+    method: "POST",
+    body: JSON.stringify({
+      gameId,
+      FEScore,
+      origMovesLength,
+      movesPerVar,
+      movesEncodedLength,
+      movesEncoded
+    }),
+    headers: headers,
+  })
+  .then((res) => {
+    return res.json();
+  })
+  .then((res) => {
+    return res.data;
+  })
+  .catch((e) => console.error(e));
+}

@@ -21,17 +21,23 @@ export type GameContextActionType =
   | { type: "restart" }
   | { type: "continue" }
   | { type: "move"; payload: Direction }
-  | { type: "initGame"};
+  | { type: "initGame" };
 
-export type GameStatus = "WIN" | "GAME_OVER" | "IN_PROGRESS" | "PLAY_AFTER_WIN" | "INITIALIZED";
+export type GameStatus =
+  | "WIN"
+  | "GAME_OVER"
+  | "IN_PROGRESS"
+  | "PLAY_AFTER_WIN"
+  | "INITIALIZED"
+  | "ACHIEVED_2048";
 
 export interface GameState {
   tiles: Tile[];
   lastMove: Direction;
   status: GameStatus;
-  randomSeed: any,
-  moves: string,
-  gameInitCalled: boolean
+  randomSeed: any;
+  moves: number[];
+  gameInitCalled: boolean;
 }
 
 export interface IGameContext {

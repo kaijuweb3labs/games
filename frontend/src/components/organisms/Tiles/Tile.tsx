@@ -16,9 +16,9 @@ interface TileProps {
 const Tile = memo((props: TileProps) => {
   return (
     <div
-      className={`${styles.tile} ${styles[`tile-${props.value}`]} ${
-        props.small && styles["small-tile"]
-      }`}
+      className={`${styles.tile} ${
+        styles[`tile-${props.value > 8192 ? "0000" : props.value}`]
+      } ${props.small && styles["small-tile"]}`}
       style={{
         transform: `translate(${props.x}px, ${props.y}px)`,
         // width: props.width,
@@ -40,4 +40,5 @@ const Tile = memo((props: TileProps) => {
   );
 });
 
+Tile.displayName = "Tile";
 export default Tile;

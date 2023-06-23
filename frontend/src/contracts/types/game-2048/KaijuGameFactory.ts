@@ -30,7 +30,7 @@ import type {
 export declare namespace KaijuGameFactory {
   export type GameObjectStruct = {
     player: PromiseOrValue<string>;
-    gameID: PromiseOrValue<string>;
+    gameId: PromiseOrValue<string>;
     score: PromiseOrValue<BigNumberish>;
     timestamp: PromiseOrValue<BigNumberish>;
   };
@@ -42,7 +42,7 @@ export declare namespace KaijuGameFactory {
     BigNumber
   ] & {
     player: string;
-    gameID: string;
+    gameId: string;
     score: BigNumber;
     timestamp: BigNumber;
   };
@@ -52,7 +52,6 @@ export interface KaijuGameFactoryInterface extends utils.Interface {
   functions: {
     "SINGAPORE_TIME_DIFF()": FunctionFragment;
     "addToLeaderBoard((address,string,uint256,uint256),uint256)": FunctionFragment;
-    "gameContract()": FunctionFragment;
     "gameIdToRandom(string)": FunctionFragment;
     "getDailyWinner()": FunctionFragment;
     "getLeaderBoard()": FunctionFragment;
@@ -60,19 +59,17 @@ export interface KaijuGameFactoryInterface extends utils.Interface {
     "getPersonalBest(address)": FunctionFragment;
     "getRandomNumber(string)": FunctionFragment;
     "getYearMonthDate(uint256)": FunctionFragment;
-    "isGameValid(string)": FunctionFragment;
     "leaderBoardByDate(bytes)": FunctionFragment;
     "owner()": FunctionFragment;
     "playerPersonalBest(address)": FunctionFragment;
     "setGameContractAddress(address)": FunctionFragment;
-    "verify2048game(string,string,uint256,string)": FunctionFragment;
+    "verify2048game(string,uint256,bytes,string)": FunctionFragment;
   };
 
   getFunction(
     nameOrSignatureOrTopic:
       | "SINGAPORE_TIME_DIFF"
       | "addToLeaderBoard"
-      | "gameContract"
       | "gameIdToRandom"
       | "getDailyWinner"
       | "getLeaderBoard"
@@ -80,7 +77,6 @@ export interface KaijuGameFactoryInterface extends utils.Interface {
       | "getPersonalBest"
       | "getRandomNumber"
       | "getYearMonthDate"
-      | "isGameValid"
       | "leaderBoardByDate"
       | "owner"
       | "playerPersonalBest"
@@ -95,10 +91,6 @@ export interface KaijuGameFactoryInterface extends utils.Interface {
   encodeFunctionData(
     functionFragment: "addToLeaderBoard",
     values: [KaijuGameFactory.GameObjectStruct, PromiseOrValue<BigNumberish>]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "gameContract",
-    values?: undefined
   ): string;
   encodeFunctionData(
     functionFragment: "gameIdToRandom",
@@ -133,10 +125,6 @@ export interface KaijuGameFactoryInterface extends utils.Interface {
     values: [PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
-    functionFragment: "isGameValid",
-    values: [PromiseOrValue<string>]
-  ): string;
-  encodeFunctionData(
     functionFragment: "leaderBoardByDate",
     values: [PromiseOrValue<BytesLike>]
   ): string;
@@ -153,8 +141,8 @@ export interface KaijuGameFactoryInterface extends utils.Interface {
     functionFragment: "verify2048game",
     values: [
       PromiseOrValue<string>,
-      PromiseOrValue<string>,
       PromiseOrValue<BigNumberish>,
+      PromiseOrValue<BytesLike>,
       PromiseOrValue<string>
     ]
   ): string;
@@ -165,10 +153,6 @@ export interface KaijuGameFactoryInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "addToLeaderBoard",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "gameContract",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -200,10 +184,6 @@ export interface KaijuGameFactoryInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "isGameValid",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "leaderBoardByDate",
     data: BytesLike
   ): Result;
@@ -223,7 +203,7 @@ export interface KaijuGameFactoryInterface extends utils.Interface {
 
   events: {
     "GetRandomNumber(string,uint256)": EventFragment;
-    "Verify2048Game(string,bool,uint256)": EventFragment;
+    "Verify2048Game(string,bool,uint256,uint256)": EventFragment;
   };
 
   getEvent(nameOrSignatureOrTopic: "GetRandomNumber"): EventFragment;
@@ -231,7 +211,7 @@ export interface KaijuGameFactoryInterface extends utils.Interface {
 }
 
 export interface GetRandomNumberEventObject {
-  _gameID: string;
+  _gameId: string;
   _randomNumber: BigNumber;
 }
 export type GetRandomNumberEvent = TypedEvent<
@@ -242,12 +222,13 @@ export type GetRandomNumberEvent = TypedEvent<
 export type GetRandomNumberEventFilter = TypedEventFilter<GetRandomNumberEvent>;
 
 export interface Verify2048GameEventObject {
-  _gameID: string;
+  _gameId: string;
   _isValid: boolean;
+  _FEScore: BigNumber;
   _contractScore: BigNumber;
 }
 export type Verify2048GameEvent = TypedEvent<
-  [string, boolean, BigNumber],
+  [string, boolean, BigNumber, BigNumber],
   Verify2048GameEventObject
 >;
 
@@ -288,8 +269,6 @@ export interface KaijuGameFactory extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
-    gameContract(overrides?: CallOverrides): Promise<[string]>;
-
     gameIdToRandom(
       arg0: PromiseOrValue<string>,
       overrides?: CallOverrides
@@ -325,11 +304,6 @@ export interface KaijuGameFactory extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[number, number, number]>;
 
-    isGameValid(
-      arg0: PromiseOrValue<string>,
-      overrides?: CallOverrides
-    ): Promise<[boolean]>;
-
     leaderBoardByDate(
       arg0: PromiseOrValue<BytesLike>,
       overrides?: CallOverrides
@@ -343,14 +317,14 @@ export interface KaijuGameFactory extends BaseContract {
     ): Promise<[BigNumber]>;
 
     setGameContractAddress(
-      _contractAddress: PromiseOrValue<string>,
+      _byteCodeExecutorAddress: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
     verify2048game(
-      _gameID: PromiseOrValue<string>,
-      _moves: PromiseOrValue<string>,
-      _score: PromiseOrValue<BigNumberish>,
+      _gameId: PromiseOrValue<string>,
+      _FEScore: PromiseOrValue<BigNumberish>,
+      _gameData: PromiseOrValue<BytesLike>,
       _cid: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
@@ -363,8 +337,6 @@ export interface KaijuGameFactory extends BaseContract {
     currentTimestamp: PromiseOrValue<BigNumberish>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
-
-  gameContract(overrides?: CallOverrides): Promise<string>;
 
   gameIdToRandom(
     arg0: PromiseOrValue<string>,
@@ -401,11 +373,6 @@ export interface KaijuGameFactory extends BaseContract {
     overrides?: CallOverrides
   ): Promise<[number, number, number]>;
 
-  isGameValid(
-    arg0: PromiseOrValue<string>,
-    overrides?: CallOverrides
-  ): Promise<boolean>;
-
   leaderBoardByDate(
     arg0: PromiseOrValue<BytesLike>,
     overrides?: CallOverrides
@@ -419,14 +386,14 @@ export interface KaijuGameFactory extends BaseContract {
   ): Promise<BigNumber>;
 
   setGameContractAddress(
-    _contractAddress: PromiseOrValue<string>,
+    _byteCodeExecutorAddress: PromiseOrValue<string>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
   verify2048game(
-    _gameID: PromiseOrValue<string>,
-    _moves: PromiseOrValue<string>,
-    _score: PromiseOrValue<BigNumberish>,
+    _gameId: PromiseOrValue<string>,
+    _FEScore: PromiseOrValue<BigNumberish>,
+    _gameData: PromiseOrValue<BytesLike>,
     _cid: PromiseOrValue<string>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
@@ -439,8 +406,6 @@ export interface KaijuGameFactory extends BaseContract {
       currentTimestamp: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<void>;
-
-    gameContract(overrides?: CallOverrides): Promise<string>;
 
     gameIdToRandom(
       arg0: PromiseOrValue<string>,
@@ -477,11 +442,6 @@ export interface KaijuGameFactory extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[number, number, number]>;
 
-    isGameValid(
-      arg0: PromiseOrValue<string>,
-      overrides?: CallOverrides
-    ): Promise<boolean>;
-
     leaderBoardByDate(
       arg0: PromiseOrValue<BytesLike>,
       overrides?: CallOverrides
@@ -495,37 +455,39 @@ export interface KaijuGameFactory extends BaseContract {
     ): Promise<BigNumber>;
 
     setGameContractAddress(
-      _contractAddress: PromiseOrValue<string>,
+      _byteCodeExecutorAddress: PromiseOrValue<string>,
       overrides?: CallOverrides
     ): Promise<void>;
 
     verify2048game(
-      _gameID: PromiseOrValue<string>,
-      _moves: PromiseOrValue<string>,
-      _score: PromiseOrValue<BigNumberish>,
+      _gameId: PromiseOrValue<string>,
+      _FEScore: PromiseOrValue<BigNumberish>,
+      _gameData: PromiseOrValue<BytesLike>,
       _cid: PromiseOrValue<string>,
       overrides?: CallOverrides
-    ): Promise<[string, boolean, BigNumber]>;
+    ): Promise<[string, boolean]>;
   };
 
   filters: {
     "GetRandomNumber(string,uint256)"(
-      _gameID?: PromiseOrValue<string> | null,
+      _gameId?: PromiseOrValue<string> | null,
       _randomNumber?: null
     ): GetRandomNumberEventFilter;
     GetRandomNumber(
-      _gameID?: PromiseOrValue<string> | null,
+      _gameId?: PromiseOrValue<string> | null,
       _randomNumber?: null
     ): GetRandomNumberEventFilter;
 
-    "Verify2048Game(string,bool,uint256)"(
-      _gameID?: PromiseOrValue<string> | null,
+    "Verify2048Game(string,bool,uint256,uint256)"(
+      _gameId?: PromiseOrValue<string> | null,
       _isValid?: null,
+      _FEScore?: null,
       _contractScore?: null
     ): Verify2048GameEventFilter;
     Verify2048Game(
-      _gameID?: PromiseOrValue<string> | null,
+      _gameId?: PromiseOrValue<string> | null,
       _isValid?: null,
+      _FEScore?: null,
       _contractScore?: null
     ): Verify2048GameEventFilter;
   };
@@ -538,8 +500,6 @@ export interface KaijuGameFactory extends BaseContract {
       currentTimestamp: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
-
-    gameContract(overrides?: CallOverrides): Promise<BigNumber>;
 
     gameIdToRandom(
       arg0: PromiseOrValue<string>,
@@ -572,11 +532,6 @@ export interface KaijuGameFactory extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    isGameValid(
-      arg0: PromiseOrValue<string>,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
     leaderBoardByDate(
       arg0: PromiseOrValue<BytesLike>,
       overrides?: CallOverrides
@@ -590,14 +545,14 @@ export interface KaijuGameFactory extends BaseContract {
     ): Promise<BigNumber>;
 
     setGameContractAddress(
-      _contractAddress: PromiseOrValue<string>,
+      _byteCodeExecutorAddress: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
     verify2048game(
-      _gameID: PromiseOrValue<string>,
-      _moves: PromiseOrValue<string>,
-      _score: PromiseOrValue<BigNumberish>,
+      _gameId: PromiseOrValue<string>,
+      _FEScore: PromiseOrValue<BigNumberish>,
+      _gameData: PromiseOrValue<BytesLike>,
       _cid: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
@@ -613,8 +568,6 @@ export interface KaijuGameFactory extends BaseContract {
       currentTimestamp: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
-
-    gameContract(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     gameIdToRandom(
       arg0: PromiseOrValue<string>,
@@ -647,11 +600,6 @@ export interface KaijuGameFactory extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
-    isGameValid(
-      arg0: PromiseOrValue<string>,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
     leaderBoardByDate(
       arg0: PromiseOrValue<BytesLike>,
       overrides?: CallOverrides
@@ -665,14 +613,14 @@ export interface KaijuGameFactory extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     setGameContractAddress(
-      _contractAddress: PromiseOrValue<string>,
+      _byteCodeExecutorAddress: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
     verify2048game(
-      _gameID: PromiseOrValue<string>,
-      _moves: PromiseOrValue<string>,
-      _score: PromiseOrValue<BigNumberish>,
+      _gameId: PromiseOrValue<string>,
+      _FEScore: PromiseOrValue<BigNumberish>,
+      _gameData: PromiseOrValue<BytesLike>,
       _cid: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;

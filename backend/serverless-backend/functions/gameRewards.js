@@ -1,10 +1,15 @@
-const {JsonRpcProvider} = require("@ethersproject/providers")
-const {Wallet} = require("@ethersproject/wallet")
-const {Contract} = require("@ethersproject/contracts")
-const {parseUnits} = require("@ethersproject/units")
+const {JsonRpcProvider} = require("@ethersproject/providers");
+const {Wallet} = require("@ethersproject/wallet");
+const {Contract} = require("@ethersproject/contracts");
+const {parseUnits} = require("@ethersproject/units");
+const {MongoClient} = require("mongodb");
 const KGFABI = require("./ContractABIs/kgfabi.json");
-const KARDABI = require("./ContractABIs/kardabi.json");
+const KARCABI = require("./ContractABIs/karcabi.json");
 const USDTABI = require("./ContractABIs/usdtabi.json");
+
+const client = new MongoClient(process.env.MONGODB_URL);
+const database = client.db(process.env.DB_NAME);
+const gameWinner = database.collection('gameWinner');
 
 module.exports.gameRewards = async (event) => {
     try {
@@ -14,29 +19,36 @@ module.exports.gameRewards = async (event) => {
         const wallet = new Wallet(privateKey, provider);
 
         const contractAddress = process.env.GAME_FACTORY_CONTRACT;
-        const KARDAddress = process.env.KAIJU_TOKEN_CONTRACT;
+        const KARCAddress = process.env.KAIJU_TOKEN_CONTRACT;
         const USDTAddress = process.env.USDT_CONTRACT;
-        const KARDContract = new Contract(KARDAddress, KARDABI, wallet);
+        const KGFcontract = new Contract(contractAddress, KGFABI, wallet);
+        const KARCContract = new Contract(KARCAddress, KARCABI, wallet);
         const USDTContract = new Contract(USDTAddress, USDTABI, wallet);
 
         USDTprice = {
-            1:'40',
-            2:'15',
-            3:'10',
-            4:'5',
-            5:'5',
-            6:'5',
-            7:'5',
+            1:process.env.USDT_REWARD_1,
+            2:process.env.USDT_REWARD_2,
+            3:process.env.USDT_REWARD_3,
+            4:process.env.USDT_REWARD_4,
+            5:process.env.USDT_REWARD_4,
+            6:process.env.USDT_REWARD_4,
+            7:process.env.USDT_REWARD_4,
+            8:process.env.USDT_REWARD_4,
+            9:process.env.USDT_REWARD_4,
+            10:process.env.USDT_REWARD_4
         }
 
-        KARDprice = {
-            1:'4000',
-            2:'1500',
-            3:'1000',
-            4:'500',
-            5:'500',
-            6:'500',
-            7:'500',
+        KARCprice = {
+            1:process.env.KARC_REWARD_1,
+            2:process.env.KARC_REWARD_2,
+            3:process.env.KARC_REWARD_3,
+            4:process.env.KARC_REWARD_4,
+            5:process.env.KARC_REWARD_4,
+            6:process.env.KARC_REWARD_4,
+            7:process.env.KARC_REWARD_4,
+            8:process.env.KARC_REWARD_4,
+            9:process.env.KARC_REWARD_4,
+            10:process.env.KARC_REWARD_4
         }
 
         let [year_, month_, date_] = await getLastDate();
@@ -44,18 +56,26 @@ module.exports.gameRewards = async (event) => {
         let leaderBoard = await getLB(year_, month_, date_, KGFcontract);
         console.log(leaderBoard);
 
-        // let lb = [{'player':'0x151653dE68F8fAd3968B2c4123BC2c386B265ed0'},{'player':'0x151653dE68F8fAd3968B2c4123BC2c386B265ed0'}];
-
         let lengthLB = leaderBoard.length;
 
-        let priceWinners = 7;
+        let priceWinners = 10;
 
-        if (lengthLB < 7){priceWinners = lengthLB;}
+        if (lengthLB < 10){priceWinners = lengthLB;}
 
         for (let i = 0; i < priceWinners; i++) {
-            let player = lb[lengthLB-i-1]['player'];
-            await transferKARD(player, KARDprice[i+1], KARDContract);
+            let player = leaderBoard[lengthLB-i-1]['player'];
+            await transferKARC(player, KARCprice[i+1], KARCContract);
             await transferUSDT(player, USDTprice[i+1], USDTContract);
+
+            let date__ = await formatDate(year_, month_, date_);
+            doc = {
+                date : date__,
+                pubKey : player,
+                USDT : parseInt(USDTprice[i+1]),
+                KARC : parseInt(KARCprice[i+1]),
+                userInformed : false
+            }
+            await gameWinner.insertOne(doc);
         }
 
         return {
@@ -102,11 +122,10 @@ async function getLB(_year, _month, _date, contract) {
     return result;
 }
 
-async function transferKARD(receiver, amount, contract) {
-
+async function transferKARC(receiver, amount, contract) {
     const recipientAddress = receiver;
-    const decimalKARD = '0';
-    const amount_ = parseUnits(amount, decimalKARD);
+    const decimalKARC = process.env.KARC_DECIMAL;
+    const amount_ = parseUnits(amount, decimalKARC);
     const result = await contract.transfer(recipientAddress, amount_);
     console.log(result);
     console.log('Transfer completed.');
@@ -114,7 +133,7 @@ async function transferKARD(receiver, amount, contract) {
 
 async function transferUSDT(receiver, amount, contract) {
     const recipientAddress = receiver;
-    const decimalUSDT = '18';
+    const decimalUSDT = process.env.USDT_DECIMAL;
     const amount_ = parseUnits(amount, decimalUSDT);
     const result = await contract.transfer(recipientAddress, amount_);
     console.log(result);
@@ -130,4 +149,12 @@ async function getLastDate(){
     month = timeYestSING.getUTCMonth() + 1;
     date = timeYestSING.getUTCDate();
     return [year, month, date];
+}
+
+async function formatDate(year, month, date) {
+    const formattedYear = year.toString().padStart(4, '0');
+    const formattedMonth = month.toString().padStart(2, '0');
+    const formattedDate = date.toString().padStart(2, '0');
+  
+    return `${formattedYear}-${formattedMonth}-${formattedDate}`;
 }

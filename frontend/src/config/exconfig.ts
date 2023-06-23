@@ -7,7 +7,7 @@ const config = {
   game_factory_address: process.env.NEXT_PUBLIC_GAME_FACTORY,
   networks: {
     "0": {
-      chainID: 80001,
+      chainID: parseInt(process.env.NEXT_PUBLIC_POLYGON_CHAIN_ID, 16),
       family: "EVM",
       name: "Mumbai Testnet",
       provider: process.env.NEXT_PUBLIC_RPC,
@@ -32,7 +32,7 @@ const config = {
           image: "/assets/icons/karc.png",
           symbol: "KARC",
           contractAddress: process.env.NEXT_PUBLIC_KARD_POLYGON_CONTRACT,
-          decimals: 18,
+          decimals: 0,
           isDisabled: false,
           gameId: "game_0",
         },

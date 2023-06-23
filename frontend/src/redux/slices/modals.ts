@@ -7,6 +7,7 @@ export type iInitialState = {
   isRewardModalVisible: boolean;
   isBalancesModalVisible: boolean;
   isQrModalVisible: boolean;
+  isComingSoonModalVisible: boolean;
   selectedApp: 'ios' | 'android';
 };
 
@@ -17,6 +18,7 @@ export const initialState: iInitialState = {
   isRewardModalVisible: false,
   isBalancesModalVisible: false,
   isQrModalVisible: false,
+  isComingSoonModalVisible: false,
   selectedApp: 'android',
 };
 
@@ -42,6 +44,9 @@ const modalsSlice = createSlice({
     setIsQrModalOpen: (state, action: PayloadAction<boolean>) => {
       state.isQrModalVisible = action.payload;
     },
+    setIsComingSoonModlOpen: (state, action: PayloadAction<boolean>) => {
+      state.isComingSoonModalVisible = action.payload;
+    },
     setQrModal: (state, action: PayloadAction<{appType: 'ios' | 'android', isOpen: boolean}>) => {
       state.selectedApp = action.payload.appType;
       state.isQrModalVisible = action.payload.isOpen;
@@ -56,6 +61,7 @@ export const {
   setIsRewardModalOpen,
   setIsBalancesModalOpen,
   setIsQrModalOpen,
+  setIsComingSoonModlOpen,
   setQrModal,
 } = modalsSlice.actions;
 

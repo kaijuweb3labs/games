@@ -39,7 +39,7 @@ const Medalists: React.FC = () => {
     <div className="flex flex-3 flex-row space-x-[9px] mt-[20px] items-center justify-center">
       <TextAtom
         fontFamily="Exo 2"
-        className="text-2xl font-bold"
+        className="text-2xl font-bold text-center"
         color="#2f3146"
       >
         Play and get into leaderboard

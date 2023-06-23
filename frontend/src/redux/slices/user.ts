@@ -21,12 +21,8 @@ export interface UserState {
   picture?: string;
   randomSeed?: number | undefined;
   isScoreValied?: boolean | undefined;
-  isScoreChecked?: boolean | undefined;
   newGamePressed?: boolean | undefined;
   initializedWallet?: boolean | undefined;
-  isUserPlayGame?: boolean | undefined;
-  nftMinting?: boolean | undefined;
-  sessionNFTMinted?: boolean | undefined;
   userDetails?: UserDetails;
   accessToken?: string;
   idToken?: string;
@@ -46,12 +42,8 @@ const INITIAL_STATE: UserState = {
   gameStatus: "pending",
   randomSeed: undefined,
   isScoreValied: undefined,
-  isScoreChecked: undefined,
   newGamePressed: undefined,
   initializedWallet: undefined,
-  isUserPlayGame: undefined,
-  nftMinting: undefined,
-  sessionNFTMinted: undefined,
 };
 
 export const userSlice = createSlice({
@@ -95,10 +87,6 @@ export const userSlice = createSlice({
       state.gameStatus = "pending";
     },
     removeUser: (state, _) => {
-      // if (state.uid) {
-      //   state.email = undefined;
-      //   state.uid = undefined;
-      // }
       return { ...INITIAL_STATE };
     },
     setIsUserLoading: (state, action: IAction<boolean>) => {
@@ -107,14 +95,12 @@ export const userSlice = createSlice({
     setRandomSeed: (state, action: IAction<{ randomSeed: number }>) => {
       state.randomSeed = action.payload.randomSeed;
       state.isScoreValied = false;
-      state.isScoreChecked = false;
     },
     setScoreValiedState: (
       state,
       action: IAction<{ isScoreValied: boolean }>
     ) => {
       state.randomSeed = undefined;
-      state.isScoreChecked = true;
       state.isScoreValied = action.payload.isScoreValied;
     },
     changeNewGamePressed: (state, action: IAction<boolean>) => {
@@ -122,15 +108,6 @@ export const userSlice = createSlice({
     },
     changeWalletInitlized: (state, action: IAction<boolean>) => {
       state.initializedWallet = action.payload;
-    },
-    changeUserPLayGame: (state, action: IAction<boolean>) => {
-      state.isUserPlayGame = action.payload;
-    },
-    changeNFTMinting: (state, action: IAction<boolean>) => {
-      state.nftMinting = action.payload;
-    },
-    changeSessionNFTMinted: (state, action: IAction<boolean>) => {
-      state.sessionNFTMinted = action.payload;
     },
   },
 });
@@ -151,11 +128,11 @@ export const initAuth = createAsyncThunk(
     const currentUser = await Auth.currentAuthenticatedUser()
       .then((currentUser) => {
         // setUser(currentUser);
-        console.log(currentUser);
+        // console.log(currentUser);
         return currentUser;
       })
       .catch((e) => {
-        console.log("Not signed in", e);
+        console.warn("Not signed in", e);
         return null;
       });
     if (currentUser) {
@@ -165,7 +142,7 @@ export const initAuth = createAsyncThunk(
           email: currentUser.signInUserSession.idToken.payload.email,
           isLoading: false,
           picture: currentUser.signInUserSession.idToken.payload.picture,
-          displayName: `${currentUser.signInUserSession.idToken.payload.given_name} ${currentUser.signInUserSession.idToken.payload.family_name}`,
+          displayName: `${currentUser.signInUserSession.idToken.payload.name}`,
           accessToken: currentUser.signInUserSession.accessToken.jwtToken,
           idToken: currentUser.signInUserSession.idToken.jwtToken,
         })
@@ -184,11 +161,11 @@ export const fetchUserDetails = createAsyncThunk(
     const currentUser = await Auth.currentAuthenticatedUser()
       .then((currentUser) => {
         // setUser(currentUser);
-        console.log(currentUser);
+        // console.log(currentUser);
         return currentUser;
       })
       .catch((e) => {
-        console.log("Not signed in", e);
+        console.warn("Not signed in", e);
         return null;
       });
     if (currentUser) {
@@ -255,37 +232,39 @@ export const {
   setScoreValiedState,
   changeNewGamePressed,
   changeWalletInitlized,
-  changeUserPLayGame,
-  changeNFTMinting,
-  changeSessionNFTMinted,
   setUserDetails,
 } = userSlice.actions;
 export const selectUser = (state: any) => state.user as UserState;
 export const selectRandomSeed = (state: any) =>
   (state.user as UserState).randomSeed;
-export const selectAuthHeaders = (state: any) => {
-  const accessToken = selectUser(state).accessToken;
-  const headers = new Headers();
-  headers.append("Content-Type", "application/json");
-  headers.append("Authorization", `Bearer ${accessToken}`);
-  return headers;
-};
+
 export const selectUserDetails = (state: any) =>
   (state.user as UserState).userDetails;
 export const selectIsScoreValied = (state: any) =>
   (state.user as UserState).isScoreValied;
-export const selectIsScoreCheckd = (state: any) =>
-  (state.user as UserState).isScoreChecked;
 export const selectNewGamePressed = (state: any) =>
   (state.user as UserState).newGamePressed;
 export const selectInitializedWallet = (state: any) =>
   (state.user as UserState).initializedWallet;
-export const selectIsUserPlayGame = (state: any) =>
-  (state.user as UserState).isUserPlayGame;
-export const selectNftMinting = (state: any) =>
-  (state.user as UserState).nftMinting;
-export const selectsessionNFTMinted = (state: any) =>
-  (state.user as UserState).sessionNFTMinted;
 export const selectUserScore = (state: any) =>
   (state.user as UserState).bestScore;
+
+export const selectAuthHeaders = async (state?: any) => {
+  return Auth.currentAuthenticatedUser()
+    .then((currentUser) => {
+      const headers = new Headers();
+
+      headers.append("Content-Type", "application/json");
+      headers.append(
+        "Authorization",
+        `Bearer ${currentUser.signInUserSession.idToken.jwtToken}`
+      );
+      return headers;
+    })
+    .catch((e) => {
+      console.error(e);
+      return new Headers();
+    });
+};
+
 export default userSlice.reducer;

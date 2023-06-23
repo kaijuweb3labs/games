@@ -8,7 +8,7 @@ import {
   createGameSession,
   getLeaderBoardAPI,
 } from "@/services/game-api/game-api";
-import { createNewGame, selectAuthHeaders, selectUser } from "./user";
+import { createNewGame, selectAuthHeaders, selectUser, setGameSession, setRandomSeed } from "./user";
 
 export type LeaderBoardItem = {
   _id: string;
@@ -23,17 +23,38 @@ export type LeaderBoardItem = {
   gamePositionHistory: [];
   gameID: string;
 };
+
+export type GameSessionData = {
+  userID: string;
+  profileName: string;
+  profilePicture: string;
+  collectionID: string;
+  gameID: string;
+  createdTimeStamp: number;
+  FEScore: number;
+  contractScore: number;
+  isValid: boolean;
+  gameState: string;
+  transactionHash: string;
+  gamePositionHistory: string[];
+};
+
 export enum GameStageEnum {
   PENDING,
   INITIALIZING,
+  INITIALIZED,
   PLAYING,
   MINTING,
+  MINT,
+  MINTED,
 }
 interface GameDataState {
   gameFactoryAddress: string;
   leaderBoard: LeaderBoardItem[];
   personalBest: number;
   gameStage: GameStageEnum;
+  singaporeDate: string;
+  gameSessionData?: GameSessionData;
 }
 
 const INITIAL_STATE: GameDataState = {
@@ -41,6 +62,8 @@ const INITIAL_STATE: GameDataState = {
   leaderBoard: [],
   personalBest: 0,
   gameStage: GameStageEnum.PENDING,
+  singaporeDate: "",
+  gameSessionData: undefined,
 };
 export const gameSlice = createSlice({
   name: "gameData",
@@ -58,6 +81,12 @@ export const gameSlice = createSlice({
     updateGameStage: (state, action: PayloadAction<GameStageEnum>) => {
       state.gameStage = action.payload;
     },
+    setSingaporeDate: (state, action: PayloadAction<string>) => {
+      state.singaporeDate = action.payload;
+    },
+    setGameSessionData: (state, action: PayloadAction<GameSessionData>) => {
+      state.gameSessionData = action.payload;
+    },
   },
 });
 
@@ -65,7 +94,7 @@ export const fetchLeaderBoard = createAsyncThunk(
   "gameData/fetchLeaderBoard",
   async (_, thunkAPI) => {
     try {
-      console.log("Fetching leader board...........");
+      // console.log("Fetching leader board...........");
       const state = thunkAPI.getState();
       const selectedNetwork = selectActiveNetwork(state);
       if (selectedNetwork) {
@@ -77,7 +106,7 @@ export const fetchLeaderBoard = createAsyncThunk(
           .getLeaderBoard()
           .then((leaderBoard) => {
             const gameIds = leaderBoard.map((l) => ({
-              gameID: l.gameID,
+              gameID: l.gameId,
               score: l.score.toNumber(),
             }));
             getLeaderBoardAPI(gameIds).then((v) => {
@@ -85,11 +114,12 @@ export const fetchLeaderBoard = createAsyncThunk(
             });
           })
           .catch((e) => {
-            console.log(e);
+            thunkAPI.dispatch(setLeaderBoard([]));
+            console.error(e);
           });
       }
     } catch (e) {
-      console.log("failed to fetch leaderboard");
+      console.error("failed to fetch leaderboard");
     }
   }
 );
@@ -119,16 +149,18 @@ export const createGameSessionThunk = createAsyncThunk(
   "gameData/createGameSession",
   async (_, thunkAPI) => {
     try {
-      console.log("Create game session...............");
       const state = thunkAPI.getState();
       const user = selectUser(state);
-      const headers = selectAuthHeaders(state);
+      const headers = await selectAuthHeaders(state);
       createGameSession(user.uid, user.displayName, user.picture, headers).then(
         (data) => {
-          thunkAPI.dispatch(
-            createNewGame({ gameId: data.id, score: data.score })
-          );
-          console.log("Created new game session", data);
+          thunkAPI.dispatch(setGameSessionData(data));
+          thunkAPI.dispatch(setGameSession({ gameId:data.id, score:data.FEScore}));
+          thunkAPI.dispatch(setRandomSeed({ randomSeed: data.randomNumber }));
+          thunkAPI.dispatch(updateGameStage(GameStageEnum.INITIALIZED));
+          // thunkAPI.dispatch(
+          //   createNewGame({ gameId: data.id, score: data.score })
+          //);
         }
       );
     } catch (e) {
@@ -136,14 +168,21 @@ export const createGameSessionThunk = createAsyncThunk(
     }
   }
 );
-export const { resetGame, setLeaderBoard, setPersonalBest, updateGameStage } =
-  gameSlice.actions;
+export const {
+  resetGame,
+  setLeaderBoard,
+  setPersonalBest,
+  updateGameStage,
+  setSingaporeDate,
+  setGameSessionData,
+} = gameSlice.actions;
 
 export const selectPersonalBest = (state: any) =>
   state.gameData.personalBest as number;
-
 export const selectLeaderBoard = (state: any) =>
   state.gameData.leaderBoard as LeaderBoardItem[];
 export const selectGameStage = (state: any) =>
   state.gameData.gameStage as GameStageEnum;
+export const selectGameSessionData = (state: any) =>
+  state.gameData.gameSessionData as GameSessionData;
 export default gameSlice.reducer;

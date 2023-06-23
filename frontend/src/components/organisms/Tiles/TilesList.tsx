@@ -47,16 +47,16 @@ export const TileContainer = (props: { tiles: Tile[] }) => {
 
 const calcFactor = () => {
   if (typeof window !== "undefined") {
-    if (window.innerWidth <= ScreenSizeBreakpoint.XS) {
+    if (window.innerWidth <= ScreenSizeBreakpoint.S) {
       return TilesScreenTransformFactor.XS;
     }
-    if (window.innerWidth <= ScreenSizeBreakpoint.S) {
-      return TilesScreenTransformFactor.S;
+    if (window.innerWidth <= ScreenSizeBreakpoint.M) {
+      return TilesScreenTransformFactor.M;
     }
     if (ScreenSizeBreakpoint.M <= window.innerWidth) {
       return TilesScreenTransformFactor.LG;
     }
   }
 
-  return TilesScreenTransformFactor.M;
+  return TilesScreenTransformFactor.S;
 };

@@ -4,6 +4,7 @@ import {
   ListenerEffectAPI,
   PayloadAction,
   ThunkDispatch,
+  current,
 } from "@reduxjs/toolkit";
 import { selectAccountAddress } from "@/redux/slices/wallet";
 
@@ -28,9 +29,8 @@ const updateAddressEffect = async (
     unknown
   >
 ) => {
-  console.log("Address listener...........");
   const state: any = listenerApi.getState();
-  const headers = selectAuthHeaders(state);
+  const headers = await selectAuthHeaders(state);
   //   console.log(state.wallet);
   if (state.wallet) {
     const address = selectAccountAddress(state);
@@ -39,8 +39,7 @@ const updateAddressEffect = async (
       listenerApi.dispatch(setUserDetails(userDetails));
     } else {
       const userState = selectUser(state);
-      userDetails = await UserAPI.addUserDetails(
-        {
+      userDetails = await UserAPI.addUserDetails({
           publicKeys: [
             {
               evm: address,
@@ -49,6 +48,37 @@ const updateAddressEffect = async (
           email: userState.email,
           name: userState.displayName,
           userProfileImage: userState.picture,
+          username:"",
+          ens:"",
+          bio:"",
+          website: {
+            title:"",
+            value:""
+          },
+          instagram: {
+            title:"",
+            value:""
+          },
+          twitter: {
+            title:"",
+            value:""
+          },
+          discord: {
+            title:"",
+            value:""
+          },
+          youtube: {
+            title:"",
+            value:""
+          },
+          linkedin: {
+            title:"",
+            value:""
+          },
+          userLevel: "",
+          publicNFTProfile: true,
+          analytics: false,
+          currency: "USD"
         },
         headers
       );
@@ -58,7 +88,6 @@ const updateAddressEffect = async (
     const user = selectUser(state);
     const isNewGame = selectNewGamePressed(state);
     if (user.uid && isNewGame) {
-      console.log("Create new game with login");
       listenerApi.dispatch(createGameSessionThunk());
       listenerApi.dispatch(changeNewGamePressed(false));
     }

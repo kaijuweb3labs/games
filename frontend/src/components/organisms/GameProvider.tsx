@@ -3,7 +3,7 @@ import {
   createRandomTile,
   generateBoard,
   isGameOver,
-  isGameWon,
+  is2048Achieved,
   merge,
   MOVES_MAP,
 } from "../../utils/boardUtils";
@@ -20,12 +20,7 @@ import router from "next/router";
 import { useEffect, useState } from "react";
 import React from "react";
 import { useReduxDispatch, useReduxSelector } from "@/redux/hooks";
-import {
-  changeNewGamePressed,
-  changeSessionNFTMinted,
-  changeUserPLayGame,
-  selectRandomSeed,
-} from "@/redux/slices/user";
+import { changeNewGamePressed, selectRandomSeed } from "@/redux/slices/user";
 import GameStats from "./GameStats";
 import { BoardContainer } from "./Board/BoardContainer";
 import {
@@ -41,21 +36,32 @@ const getGameStatus = (tiles: Tile[]): GameStatus => {
     return "GAME_OVER";
   }
 
-  if (isGameWon(tiles)) {
-    return "WIN";
+  if (is2048Achieved(tiles)) {
+    return "ACHIEVED_2048";
   }
 
   return "IN_PROGRESS";
 };
 
-const initState = (tilesCount = 2, randomSeed = 1234): GameState => {
+const initState = (tilesCount = 2, randomSeed?: number): GameState => {
+  if (!randomSeed) {
+    const newTiles = generateBoard(tilesCount, 0);
+    return {
+      tiles: newTiles,
+      lastMove: null,
+      status: "INITIALIZED",
+      randomSeed: 0,
+      moves: [],
+      gameInitCalled: false,
+    };
+  }
   const newTiles = generateBoard(tilesCount, randomSeed);
   return {
     tiles: newTiles,
     lastMove: null,
     status: "INITIALIZED",
     randomSeed: newTiles[1].lastRandom,
-    moves: "",
+    moves: [],
     gameInitCalled: false,
   };
 };
@@ -66,11 +72,11 @@ function gameReducer(state: GameState, action: any) {
       return { ...state, gameInitCalled: true };
     }
     case "restart": {
-      console.log("Restart}}}}}}}}}}", action);
+      // console.log("Game Starting...", action);
       return initState(2, action.payload);
     }
     case "continue": {
-      return { ...state, status: "PLAY_AFTER_WIN" };
+      return { ...state, status: "MINT_AFTER_PLAY" };
     }
     case "move": {
       const move = MOVES_MAP[action.payload];
@@ -86,13 +92,13 @@ function gameReducer(state: GameState, action: any) {
         state.status !== "PLAY_AFTER_WIN" || status === "GAME_OVER";
 
       if (action.payload == "left") {
-        state.moves += "0";
+        state.moves.push(0);
       } else if (action.payload == "right") {
-        state.moves += "1";
+        state.moves.push(1);
       } else if (action.payload == "up") {
-        state.moves += "2";
+        state.moves.push(2);
       } else if (action.payload == "down") {
-        state.moves += "3";
+        state.moves.push(3);
       }
 
       return {
@@ -103,6 +109,8 @@ function gameReducer(state: GameState, action: any) {
         moves: state.moves,
       };
     }
+    case "REPLACE_STATE":
+      return action.payload;
     default: {
       throw new Error(`Unhandled action: ${action}`);
     }
@@ -114,30 +122,31 @@ type gameProviderType = {
 };
 
 const GameProvider = ({ isLoged }) => {
-  const [state, dispatch] = useGameLocalStorage<GameState>(
-    "game",
-    initState(),
-    gameReducer
-  );
-
   const randomSeed = useReduxSelector(selectRandomSeed);
   const reduxDispatch = useReduxDispatch();
   const gameStage = useReduxSelector(selectGameStage);
 
+  const [state, dispatch] = useGameLocalStorage<GameState>(
+    "game",
+    {
+      tiles: [],
+      lastMove: null,
+      status: "INITIALIZED",
+      randomSeed: 0,
+      moves: [],
+      gameInitCalled: false,
+    },
+    gameReducer
+  );
+
   useEffect(() => {
-    console.log(
-      "Seeed Changed.................................",
-      randomSeed,
-      state
-    );
-    if (randomSeed && gameStage === GameStageEnum.INITIALIZING) {
+    //console.log("Random seed changed", randomSeed);
+    if (randomSeed && gameStage === GameStageEnum.INITIALIZED) {
       reduxDispatch(updateGameStage(GameStageEnum.PLAYING));
       reduxDispatch(changeNewGamePressed(false));
-      reduxDispatch(changeUserPLayGame(true));
-      reduxDispatch(changeSessionNFTMinted(false));
       dispatch({ type: "restart", payload: randomSeed });
     }
-  }, [randomSeed]);
+  }, [randomSeed, gameStage, reduxDispatch, dispatch]);
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -162,7 +171,8 @@ const GameProvider = ({ isLoged }) => {
         document.removeEventListener("keydown", handleKeyPress);
       };
     }
-  }, [dispatch, gameStage]);
+  }, [dispatch, gameStage, isLoged]);
+
   return (
     <GameContext.Provider value={{ gameState: state, dispatch }}>
       <GameStats />

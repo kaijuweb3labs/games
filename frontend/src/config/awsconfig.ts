@@ -1,4 +1,4 @@
-export default {
+const config = {
   identityPoolId: process.env.NEXT_PUBLIC_AWS_IDENTITY_POOL,
   region: process.env.NEXT_PUBLIC_AWS_REGION,
   identityPoolRegion: process.env.NEXT_PUBLIC_AWS_REGION,
@@ -13,3 +13,5 @@ export default {
     responseType: process.env.NEXT_PUBLIC_AWS_OATUH_RESPONSE_TYPE,
   },
 };
+
+export default config;
